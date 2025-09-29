@@ -1,160 +1,185 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Proceso Industrial Avanzado con A-Frame</title>
+  <title>Proceso Industrial Fluido y Realista</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
   <script>
     AFRAME.registerComponent('proceso-industrial', {
-      // Función que se ejecuta una sola vez al iniciar la escena
       init: function () {
-        console.log('Iniciando el cerebro del proceso industrial.');
-        // Obtenemos referencias a los objetos importantes de la escena
-        this.brazo1 = document.querySelector('#brazo-1-pinza');
-        this.brazo2 = document.querySelector('#brazo-2-pinza');
-        this.cinta = document.querySelector('#cinta-transportadora');
+        this.boxSize = 0.6;
+        this.alturaCinta = 0.2;
+        this.alturaPallet = 0.1;
+        
+        this.brazo1 = {
+          rotador: document.querySelector('#brazo-1-rotador'),
+          hombro: document.querySelector('#brazo-1-hombro'),
+          pinza: document.querySelector('#brazo-1-pinza')
+        };
+        this.brazo2 = {
+          rotador: document.querySelector('#brazo-2-rotador'),
+          hombro: document.querySelector('#brazo-2-hombro'),
+          pinza: document.querySelector('#brazo-2-pinza')
+        };
+        
         this.escena = document.querySelector('a-scene');
-
-        // Variables para controlar el estado del proceso
-        this.cajaActual = null; // La caja que se está moviendo
-        this.posicionPallet = 0; // Para saber dónde colocar la siguiente caja (0 a 3)
+        this.cajaActual = null;
+        this.posicionPallet = 0;
         this.posicionesDelPallet = [
-          { x: 3, y: 0.6, z: -3.5 },
-          { x: 4, y: 0.6, z: -3.5 },
-          { x: 3, y: 0.6, z: -4.5 },
-          { x: 4, y: 0.6, z: -4.5 }
+          { x: 3.7, y: this.alturaPallet + this.boxSize / 2, z: -3.7 },
+          { x: 4.3, y: this.alturaPallet + this.boxSize / 2, z: -3.7 },
+          { x: 3.7, y: this.alturaPallet + this.boxSize / 2, z: -4.3 },
+          { x: 4.3, y: this.alturaPallet + this.boxSize / 2, z: -4.3 }
         ];
 
-        // ¡Empezamos el primer ciclo!
         this.iniciarNuevoCiclo();
       },
 
-      // 1. Crea una caja nueva y comienza la secuencia del primer brazo
+      // --- SECUENCIA PRINCIPAL DEL PROCESO ---
+
+      // 1. Inicia el ciclo creando una caja y moviendo el brazo 1
       iniciarNuevoCiclo: function () {
-        console.log("CICLO: Creando nueva caja.");
         const nuevaCaja = document.createElement('a-box');
-        nuevaCaja.setAttribute('position', { x: -4, y: 0.6, z: -3.5 });
-        nuevaCaja.setAttribute('color', '#BF7A30');
-        nuevaCaja.setAttribute('width', '0.8');
-        nuevaCaja.setAttribute('height', '0.8');
-        nuevaCaja.setAttribute('depth', '0.8');
+        nuevaCaja.setAttribute('position', { x: -4, y: this.boxSize / 2, z: -3.5 });
+        nuevaCaja.setAttribute('color', '#D2B48C');
+        nuevaCaja.setAttribute('width', this.boxSize);
+        nuevaCaja.setAttribute('height', this.boxSize);
+        nuevaCaja.setAttribute('depth', this.boxSize);
+        nuevaCaja.setAttribute('shadow', '');
         this.escena.appendChild(nuevaCaja);
         this.cajaActual = nuevaCaja;
-
-        // Anima el brazo 1 para que vaya hacia la caja
-        this.moverBrazo(this.brazo1, { x: -4, y: 1, z: -3.5 }, this.recogerCaja);
+        // Mueve el brazo a la posición de agarre (arriba)
+        this.moverBrazo(this.brazo1, 'recogerInicio_arriba', this.bajarParaRecoger);
       },
 
-      // 2. "Pega" la caja a la pinza del brazo y lo mueve hacia la cinta
+      // 2. Baja el brazo para agarrar la caja
+      bajarParaRecoger: function() {
+        this.moverBrazo(this.brazo1, 'recogerInicio_abajo', this.recogerCaja);
+      },
+
+      // 3. Agarra la caja, la levanta y la mueve hacia la cinta
       recogerCaja: function () {
-        console.log("CICLO: Recogiendo caja con brazo 1.");
-        // La "magia" de recoger: hacemos que la caja sea hija de la pinza
-        this.brazo1.object3D.attach(this.cajaActual.object3D);
-        
-        // Movemos el brazo hacia la cinta transportadora
-        this.moverBrazo(this.brazo1, { x: -2, y: 1, z: -3.5 }, this.soltarCajaEnCinta);
+        this.brazo1.pinza.object3D.attach(this.cajaActual.object3D);
+        // **CORRECCIÓN CLAVE:** Resetea la rotación de la caja para que esté derecha.
+        this.cajaActual.object3D.rotation.set(0, 0, 0);
+        this.moverBrazo(this.brazo1, 'soltarCinta_arriba', this.bajarParaSoltarEnCinta);
       },
 
-      // 3. "Suelta" la caja en la cinta y mueve el brazo a su posición original
-      soltarCajaEnCinta: function () {
-        console.log("CICLO: Soltando caja en la cinta.");
-        // La "magia" de soltar: hacemos que la caja sea hija de la escena principal
-        this.escena.object3D.attach(this.cajaActual.object3D);
+      // 4. Baja el brazo para depositar la caja en la cinta
+      bajarParaSoltarEnCinta: function() {
+        this.moverBrazo(this.brazo1, 'soltarCinta_abajo', this.soltarCajaEnCinta);
+      },
 
-        // Movemos el brazo 1 de vuelta a su sitio
-        this.moverBrazo(this.brazo1, { x: -4, y: 1, z: -2 }); // No necesita callback
-        
-        // Iniciamos la animación de la caja sobre la cinta
+      // 5. Suelta la caja, levanta el brazo y lo regresa a su posición
+      soltarCajaEnCinta: function () {
+        this.escena.object3D.attach(this.cajaActual.object3D);
+        this.cajaActual.setAttribute('position', { x: -2.2, y: this.alturaCinta + this.boxSize / 2, z: -3.5 });
+        this.moverBrazo(this.brazo1, 'reposo');
         this.moverCajaPorCinta();
       },
 
-      // 4. Anima la caja a lo largo de la cinta transportadora
+      // 6. Anima la caja a lo largo de la cinta y llama al brazo 2
       moverCajaPorCinta: function() {
-        console.log("CICLO: Moviendo caja por la cinta.");
-        this.cajaActual.setAttribute('animation', {
-          property: 'position',
-          to: { x: 2, y: 0.6, z: -3.5 },
-          dur: 4000,
-          easing: 'linear'
-        });
-
-        // Cuando termine, llamamos al brazo 2 para que la recoja
-        this.cajaActual.addEventListener('animationcomplete', () => {
-          this.moverBrazo(this.brazo2, { x: 2, y: 1, z: -3.5 }, this.recogerCajaDeCinta);
+        this.cajaActual.setAttribute('animation__pos', { property: 'position', to: { x: 2.2, y: this.alturaCinta + this.boxSize / 2, z: -3.5 }, dur: 5000, easing: 'linear' });
+        this.cajaActual.addEventListener('animationcomplete__pos', () => {
+          this.moverBrazo(this.brazo2, 'recogerCinta_arriba', this.bajarParaRecogerDeCinta);
         }, { once: true });
       },
-
-      // 5. El brazo 2 recoge la caja del final de la cinta
-      recogerCajaDeCinta: function() {
-        console.log("CICLO: Recogiendo caja de la cinta con brazo 2.");
-        this.brazo2.object3D.attach(this.cajaActual.object3D);
-
-        // Calculamos la posición final en el pallet
-        const posFinal = this.posicionesDelPallet[this.posicionPallet];
-        this.moverBrazo(this.brazo2, { x: posFinal.x, y: 1, z: posFinal.z }, this.acomodarEnPallet);
-      },
       
-      // 6. El brazo 2 coloca la caja en el pallet y vuelve a su sitio
-      acomodarEnPallet: function() {
-        console.log("CICLO: Acomodando caja en el pallet.");
-        this.escena.object3D.attach(this.cajaActual.object3D);
-
-        // Movemos el brazo 2 a su posición de reposo
-        this.moverBrazo(this.brazo2, { x: 4, y: 1, z: -2 });
-
-        // Actualizamos el contador de posición para la siguiente caja
-        this.posicionPallet++;
-        if (this.posicionPallet >= this.posicionesDelPallet.length) {
-          this.posicionPallet = 0; // Reiniciamos si el pallet está lleno
-        }
-
-        // ¡Empezamos todo el ciclo de nuevo!
-        // Le damos un pequeño respiro antes de empezar
-        setTimeout(() => {
-          this.iniciarNuevoCiclo();
-        }, 1000); // 1 segundo de espera
+      // 7. (Brazo 2) Baja para recoger la caja de la cinta
+      bajarParaRecogerDeCinta: function() {
+        this.moverBrazo(this.brazo2, 'recogerCinta_abajo', this.recogerCajaDeCinta);
       },
 
-      // --- FUNCIÓN DE AYUDA ---
-      // Mueve un brazo a una posición y ejecuta una función al terminar
-      moverBrazo: function (brazo, posicion, callback) {
-        brazo.setAttribute('animation', {
-          property: 'position',
-          to: posicion,
-          dur: 1500,
-          easing: 'easeInOutSine'
-        });
-        
-        // Si hay una función de callback, la ejecutamos cuando termine la animación
+      // 8. (Brazo 2) Agarra la caja, la levanta y la mueve hacia el pallet
+      recogerCajaDeCinta: function() {
+        this.brazo2.pinza.object3D.attach(this.cajaActual.object3D);
+        this.cajaActual.object3D.rotation.set(0, 0, 0); // **CORRECCIÓN CLAVE**
+        this.moverBrazo(this.brazo2, 'soltarPallet_arriba', this.bajarParaAcomodar);
+      },
+
+      // 9. (Brazo 2) Baja para acomodar la caja en el pallet
+      bajarParaAcomodar: function() {
+        const pose = 'soltarPallet_abajo_' + this.posicionPallet;
+        this.moverBrazo(this.brazo2, pose, this.acomodarEnPallet);
+      },
+
+      // 10. (Brazo 2) Suelta la caja y reinicia el ciclo
+      acomodarEnPallet: function() {
+        this.escena.object3D.attach(this.cajaActual.object3D);
+        const posFinal = this.posicionesDelPallet[this.posicionPallet];
+        this.cajaActual.setAttribute('position', posFinal);
+        this.moverBrazo(this.brazo2, 'reposo');
+        this.posicionPallet = (this.posicionPallet + 1) % this.posicionesDelPallet.length;
+        setTimeout(() => this.iniciarNuevoCiclo(), 1000);
+      },
+
+      // --- FUNCIÓN DE ANIMACIÓN MEJORADA ---
+      moverBrazo: function (brazo, pose, callback) {
+        const dur = 750; // Animación más rápida para ser más fluida
+        const poses = {
+          // Posiciones Brazo 1
+          reposo:                 { rotador: 0,   hombro: -30 },
+          recogerInicio_arriba:   { rotador: -90, hombro: -10 },
+          recogerInicio_abajo:    { rotador: -90, hombro: 20  },
+          soltarCinta_arriba:     { rotador: -45, hombro: -10 },
+          soltarCinta_abajo:      { rotador: -45, hombro: 10  },
+          // Posiciones Brazo 2
+          recogerCinta_arriba:    { rotador: 45,  hombro: -10 },
+          recogerCinta_abajo:     { rotador: 45,  hombro: 10  },
+          soltarPallet_arriba:    { rotador: 90, hombro: -10 },
+          soltarPallet_abajo_0:   { rotador: 75, hombro: 20 }, // Posición para caja 0
+          soltarPallet_abajo_1:   { rotador: 105, hombro: 20 }, // Posición para caja 1
+          soltarPallet_abajo_2:   { rotador: 75, hombro: 20 }, // etc...
+          soltarPallet_abajo_3:   { rotador: 105, hombro: 20 }
+        };
+        const targetPose = poses[pose] || poses['reposo'];
+
+        brazo.rotador.setAttribute('animation__rotacion', { property: 'rotation.y', to: targetPose.rotador, dur: dur, easing: 'easeInOutSine' });
+        brazo.hombro.setAttribute('animation__inclinacion', { property: 'rotation.x', to: targetPose.hombro, dur: dur, easing: 'easeInOutSine' });
+
         if (callback) {
-          brazo.addEventListener('animationcomplete', callback.bind(this), { once: true });
+          brazo.hombro.addEventListener('animationcomplete__inclinacion', callback.bind(this), { once: true });
         }
       }
     });
   </script>
 </head>
 <body>
-  <a-scene background="color: #ECECEC">
-    <a-entity light="type: ambient; color: #888"></a-entity>
-    <a-entity light="type: directional; intensity: 0.8; castShadow: true; position: -2 5 3"></a-entity>
+  <a-scene background="color: #283747" shadow="type: pcfsoft">
+    <a-entity light="type: ambient; color: #BBB; intensity: 0.5"></a-entity>
+    <a-entity light="type: directional; intensity: 0.8; castShadow: true; position: -3 5 4"></a-entity>
+    <a-sky color="#B0C4DE"></a-sky>
 
     <a-entity id="manager" proceso-industrial></a-entity>
 
-    <a-box position="-4 0.25 -3.5" depth="1.5" width="1.5" height="0.5" color="#555" shadow></a-box>
-    <a-entity id="brazo-1">
-      <a-cylinder position="-4 0.5 -2" radius="0.3" height="1" color="#F44336" shadow></a-cylinder>
-      <a-box id="brazo-1-pinza" position="-4 1 -2" width="0.2" height="0.2" depth="1" color="#D32F2F" shadow></a-box>
+    <a-box position="-4 0.1 -3.5" depth="1.5" width="1.5" height="0.2" color="#455A64" shadow></a-box>
+    <a-entity id="brazo-1-entidad" position="-3 0 -3.5">
+      <a-entity id="brazo-1-rotador">
+        <a-cylinder position="0 0.5 0" radius="0.3" height="1" color="#546E7A" shadow></a-cylinder>
+        <a-entity id="brazo-1-hombro" position="0 1 0">
+          <a-box position="0 0 0.5" width="0.25" height="0.25" depth="1" color="#78909C" shadow></a-box>
+          <a-box id="brazo-1-pinza" position="0 0 1.2" width="0.4" height="0.4" depth="0.4" color="#B0BEC5" shadow></a-box>
+        </a-entity>
+      </a-entity>
     </a-entity>
 
-    <a-box id="cinta-transportadora" position="0 0.25 -3.5" width="4" height="0.5" depth="1.5" color="#333" shadow></a-box>
+    <a-box id="cinta-transportadora" position="0 0.2 -3.5" width="5" height="0.1" depth="1.5" color="#333" shadow></a-box>
+    <a-box position="0 0.1 -3.5" width="5" height="0.1" depth="1.6" color="#212121" shadow></a-box>
     
-    <a-box id="pallet" position="3.5 0.25 -4" width="2" height="0.5" depth="2" color="#6D4C41" shadow></a-box>
-    <a-entity id="brazo-2">
-      <a-cylinder position="4 0.5 -2" radius="0.3" height="1" color="#4CAF50" shadow></a-cylinder>
-      <a-box id="brazo-2-pinza" position="4 1 -2" width="0.2" height="0.2" depth="1" color="#388E3C" shadow></a-box>
+    <a-box id="pallet" position="4 0.1 -4" width="2" height="0.2" color="#6D4C41" shadow></a-box>
+    <a-entity id="brazo-2-entidad" position="3 0 -3.5">
+      <a-entity id="brazo-2-rotador">
+        <a-cylinder position="0 0.5 0" radius="0.3" height="1" color="#0277BD" shadow></a-cylinder>
+        <a-entity id="brazo-2-hombro" position="0 1 0">
+          <a-box position="0 0 0.5" width="0.25" height="0.25" depth="1" color="#0288D1" shadow></a-box>
+          <a-box id="brazo-2-pinza" position="0 0 1.2" width="0.4" height="0.4" depth="0.4" color="#4FC3F7" shadow></a-box>
+        </a-entity>
+      </a-entity>
     </a-entity>
 
-    <a-plane position="0 0 0" rotation="-90 0 0" width="15" height="15" color="#795548" shadow></a-plane>
+    <a-plane position="0 0 0" rotation="-90 0 0" width="15" height="15" color="#616161" shadow></a-plane>
   </a-scene>
 </body>
 </html>
+
