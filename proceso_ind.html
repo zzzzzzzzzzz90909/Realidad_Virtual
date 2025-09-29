@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Proceso Industrial con A-Frame</title>
+    <meta name="description" content="Simulación de una cinta transportadora.">
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene background="color: #ECECEC">
+
+      <a-box 
+        id="cinta-transportadora"
+        position="0 0.8 -5" 
+        width="8" 
+        height="0.2" 
+        depth="1.5" 
+        color="#333333"
+        shadow>
+      </a-box>
+
+      <a-box 
+        class="caja"
+        position="-3.5 1.3 -5" 
+        width="0.8" 
+        height="0.8" 
+        depth="0.8" 
+        color="#D2B48C"
+        shadow>
+          <a-animation
+            attribute="position"
+            from="-3.5 1.3 -5"
+            to="3.5 1.3 -5"
+            dur="8000"
+            repeat="indefinite"
+            easing="linear">
+          </a-animation>
+      </a-box>
+
+      <a-box 
+        class="caja"
+        position="-3.5 1.3 -5" 
+        width="0.8" 
+        height="0.8" 
+        depth="0.8" 
+        color="#D2B48C"
+        shadow>
+          <a-animation
+            attribute="position"
+            from="-3.5 1.3 -5"
+            to="3.5 1.3 -5"
+            dur="8000"
+            delay="4000"
+            repeat="indefinite"
+            easing="linear">
+          </a-animation>
+      </a-box>
+
+      <a-plane 
+        position="0 0 -4" 
+        rotation="-90 0 0" 
+        width="20" 
+        height="20" 
+        color="#795548">
+      </a-plane>
+
+      <a-light type="ambient" color="#888"></a-light>
+      <a-light type="directional" intensity="0.5" position="-1 1 2"></a-light>
+
+    </a-scene>
+  </body>
+</html>
