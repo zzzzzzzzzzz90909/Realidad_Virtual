@@ -1,37 +1,160 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Proceso Industrial - Método Alternativo</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  </head>
-  <body>
-    <a-scene background="color: #ECECEC">
+<head>
+  <title>Proceso Industrial Avanzado con A-Frame</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <script>
+    AFRAME.registerComponent('proceso-industrial', {
+      // Función que se ejecuta una sola vez al iniciar la escena
+      init: function () {
+        console.log('Iniciando el cerebro del proceso industrial.');
+        // Obtenemos referencias a los objetos importantes de la escena
+        this.brazo1 = document.querySelector('#brazo-1-pinza');
+        this.brazo2 = document.querySelector('#brazo-2-pinza');
+        this.cinta = document.querySelector('#cinta-transportadora');
+        this.escena = document.querySelector('a-scene');
+
+        // Variables para controlar el estado del proceso
+        this.cajaActual = null; // La caja que se está moviendo
+        this.posicionPallet = 0; // Para saber dónde colocar la siguiente caja (0 a 3)
+        this.posicionesDelPallet = [
+          { x: 3, y: 0.6, z: -3.5 },
+          { x: 4, y: 0.6, z: -3.5 },
+          { x: 3, y: 0.6, z: -4.5 },
+          { x: 4, y: 0.6, z: -4.5 }
+        ];
+
+        // ¡Empezamos el primer ciclo!
+        this.iniciarNuevoCiclo();
+      },
+
+      // 1. Crea una caja nueva y comienza la secuencia del primer brazo
+      iniciarNuevoCiclo: function () {
+        console.log("CICLO: Creando nueva caja.");
+        const nuevaCaja = document.createElement('a-box');
+        nuevaCaja.setAttribute('position', { x: -4, y: 0.6, z: -3.5 });
+        nuevaCaja.setAttribute('color', '#BF7A30');
+        nuevaCaja.setAttribute('width', '0.8');
+        nuevaCaja.setAttribute('height', '0.8');
+        nuevaCaja.setAttribute('depth', '0.8');
+        this.escena.appendChild(nuevaCaja);
+        this.cajaActual = nuevaCaja;
+
+        // Anima el brazo 1 para que vaya hacia la caja
+        this.moverBrazo(this.brazo1, { x: -4, y: 1, z: -3.5 }, this.recogerCaja);
+      },
+
+      // 2. "Pega" la caja a la pinza del brazo y lo mueve hacia la cinta
+      recogerCaja: function () {
+        console.log("CICLO: Recogiendo caja con brazo 1.");
+        // La "magia" de recoger: hacemos que la caja sea hija de la pinza
+        this.brazo1.object3D.attach(this.cajaActual.object3D);
+        
+        // Movemos el brazo hacia la cinta transportadora
+        this.moverBrazo(this.brazo1, { x: -2, y: 1, z: -3.5 }, this.soltarCajaEnCinta);
+      },
+
+      // 3. "Suelta" la caja en la cinta y mueve el brazo a su posición original
+      soltarCajaEnCinta: function () {
+        console.log("CICLO: Soltando caja en la cinta.");
+        // La "magia" de soltar: hacemos que la caja sea hija de la escena principal
+        this.escena.object3D.attach(this.cajaActual.object3D);
+
+        // Movemos el brazo 1 de vuelta a su sitio
+        this.moverBrazo(this.brazo1, { x: -4, y: 1, z: -2 }); // No necesita callback
+        
+        // Iniciamos la animación de la caja sobre la cinta
+        this.moverCajaPorCinta();
+      },
+
+      // 4. Anima la caja a lo largo de la cinta transportadora
+      moverCajaPorCinta: function() {
+        console.log("CICLO: Moviendo caja por la cinta.");
+        this.cajaActual.setAttribute('animation', {
+          property: 'position',
+          to: { x: 2, y: 0.6, z: -3.5 },
+          dur: 4000,
+          easing: 'linear'
+        });
+
+        // Cuando termine, llamamos al brazo 2 para que la recoja
+        this.cajaActual.addEventListener('animationcomplete', () => {
+          this.moverBrazo(this.brazo2, { x: 2, y: 1, z: -3.5 }, this.recogerCajaDeCinta);
+        }, { once: true });
+      },
+
+      // 5. El brazo 2 recoge la caja del final de la cinta
+      recogerCajaDeCinta: function() {
+        console.log("CICLO: Recogiendo caja de la cinta con brazo 2.");
+        this.brazo2.object3D.attach(this.cajaActual.object3D);
+
+        // Calculamos la posición final en el pallet
+        const posFinal = this.posicionesDelPallet[this.posicionPallet];
+        this.moverBrazo(this.brazo2, { x: posFinal.x, y: 1, z: posFinal.z }, this.acomodarEnPallet);
+      },
       
-      <a-box position="0 0.8 -5" width="8" height="0.2" depth="1.5" color="#333333"></a-box>
+      // 6. El brazo 2 coloca la caja en el pallet y vuelve a su sitio
+      acomodarEnPallet: function() {
+        console.log("CICLO: Acomodando caja en el pallet.");
+        this.escena.object3D.attach(this.cajaActual.object3D);
 
-      <a-box 
-        position="-3.5 1.3 -5" 
-        color="#D2B48C"
-        animation="property: position; 
-                   to: 3.5 1.3 -5; 
-                   dur: 8000; 
-                   easing: linear; 
-                   loop: true">
-      </a-box>
+        // Movemos el brazo 2 a su posición de reposo
+        this.moverBrazo(this.brazo2, { x: 4, y: 1, z: -2 });
 
-      <a-box 
-        position="-3.5 1.3 -5" 
-        color="#D2B48C"
-        animation="property: position; 
-                   to: 3.5 1.3 -5; 
-                   dur: 8000; 
-                   easing: linear; 
-                   loop: true;
-                   delay: 4000">
-      </a-box>
+        // Actualizamos el contador de posición para la siguiente caja
+        this.posicionPallet++;
+        if (this.posicionPallet >= this.posicionesDelPallet.length) {
+          this.posicionPallet = 0; // Reiniciamos si el pallet está lleno
+        }
 
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="20" height="20" color="#795548"></a-plane>
-      <a-light type="ambient" color="#888"></a-light>
-    </a-scene>
-  </body>
+        // ¡Empezamos todo el ciclo de nuevo!
+        // Le damos un pequeño respiro antes de empezar
+        setTimeout(() => {
+          this.iniciarNuevoCiclo();
+        }, 1000); // 1 segundo de espera
+      },
+
+      // --- FUNCIÓN DE AYUDA ---
+      // Mueve un brazo a una posición y ejecuta una función al terminar
+      moverBrazo: function (brazo, posicion, callback) {
+        brazo.setAttribute('animation', {
+          property: 'position',
+          to: posicion,
+          dur: 1500,
+          easing: 'easeInOutSine'
+        });
+        
+        // Si hay una función de callback, la ejecutamos cuando termine la animación
+        if (callback) {
+          brazo.addEventListener('animationcomplete', callback.bind(this), { once: true });
+        }
+      }
+    });
+  </script>
+</head>
+<body>
+  <a-scene background="color: #ECECEC">
+    <a-entity light="type: ambient; color: #888"></a-entity>
+    <a-entity light="type: directional; intensity: 0.8; castShadow: true; position: -2 5 3"></a-entity>
+
+    <a-entity id="manager" proceso-industrial></a-entity>
+
+    <a-box position="-4 0.25 -3.5" depth="1.5" width="1.5" height="0.5" color="#555" shadow></a-box>
+    <a-entity id="brazo-1">
+      <a-cylinder position="-4 0.5 -2" radius="0.3" height="1" color="#F44336" shadow></a-cylinder>
+      <a-box id="brazo-1-pinza" position="-4 1 -2" width="0.2" height="0.2" depth="1" color="#D32F2F" shadow></a-box>
+    </a-entity>
+
+    <a-box id="cinta-transportadora" position="0 0.25 -3.5" width="4" height="0.5" depth="1.5" color="#333" shadow></a-box>
+    
+    <a-box id="pallet" position="3.5 0.25 -4" width="2" height="0.5" depth="2" color="#6D4C41" shadow></a-box>
+    <a-entity id="brazo-2">
+      <a-cylinder position="4 0.5 -2" radius="0.3" height="1" color="#4CAF50" shadow></a-cylinder>
+      <a-box id="brazo-2-pinza" position="4 1 -2" width="0.2" height="0.2" depth="1" color="#388E3C" shadow></a-box>
+    </a-entity>
+
+    <a-plane position="0 0 0" rotation="-90 0 0" width="15" height="15" color="#795548" shadow></a-plane>
+  </a-scene>
+</body>
 </html>
