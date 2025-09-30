@@ -4,11 +4,117 @@
   <title>Planta Industrial v3 - Brazo Robótico</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.3/tween.umd.js"></script>
-  <script src="./script.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #ui-panel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      z-index: 1000;
+      max-width: 300px;
+    }
+    #ui-panel h2 {
+      margin-top: 0;
+      color: #FFD700;
+    }
+    .control-group {
+      margin-bottom: 10px;
+    }
+    button {
+      background: #3d5a80;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin: 5px 2px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #4a7bb5;
+    }
+    .preset-btn {
+      background: #e63946;
+    }
+    .preset-btn:hover {
+      background: #ff6b7a;
+    }
+    .slider-container {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+    }
+    .slider-container label {
+      width: 120px;
+      display: inline-block;
+    }
+    input[type="range"] {
+      flex-grow: 1;
+    }
+    .value-display {
+      width: 40px;
+      text-align: right;
+    }
+  </style>
 </head>
 <body>
-  <a-scene background="color: #404040" robot-controller renderer="colorManagement: true; physicallyCorrectLights: true">
+  <div id="ui-panel">
+    <h2>Control del Brazo Robótico</h2>
+    
+    <div class="control-group">
+      <h3>Movimientos Preset</h3>
+      <button class="preset-btn" onclick="moveToPick()">Recoger Caja</button>
+      <button class="preset-btn" onclick="moveToPallet()">Colocar en Pallet</button>
+      <button class="preset-btn" onclick="moveToHome()">Posición Inicial</button>
+    </div>
+    
+    <div class="control-group">
+      <h3>Control Manual</h3>
+      <div class="slider-container">
+        <label for="base-rotation">Base:</label>
+        <input type="range" id="base-rotation" min="-180" max="180" value="0" oninput="updateRobot()">
+        <span class="value-display" id="base-value">0°</span>
+      </div>
+      
+      <div class="slider-container">
+        <label for="shoulder-angle">Hombro:</label>
+        <input type="range" id="shoulder-angle" min="-90" max="90" value="0" oninput="updateRobot()">
+        <span class="value-display" id="shoulder-value">0°</span>
+      </div>
+      
+      <div class="slider-container">
+        <label for="elbow-angle">Codo:</label>
+        <input type="range" id="elbow-angle" min="-90" max="90" value="0" oninput="updateRobot()">
+        <span class="value-display" id="elbow-value">0°</span>
+      </div>
+      
+      <div class="slider-container">
+        <label for="wrist-angle">Muñeca:</label>
+        <input type="range" id="wrist-angle" min="-90" max="90" value="0" oninput="updateRobot()">
+        <span class="value-display" id="wrist-value">0°</span>
+      </div>
+      
+      <div class="slider-container">
+        <label for="gripper-state">Pinza:</label>
+        <input type="range" id="gripper-state" min="0" max="1" value="0" step="1" oninput="updateRobot()">
+        <span class="value-display" id="gripper-value">Cerrada</span>
+      </div>
+    </div>
+    
+    <div class="control-group">
+      <button onclick="toggleAnimation()" id="animation-btn">Iniciar Animación Automática</button>
+    </div>
+  </div>
 
+  <a-scene background="color: #404040" renderer="colorManagement: true; physicallyCorrectLights: true">
     <a-assets>
       <a-asset-item id="robot-arm" src="./YASKAWA_ROBOTIC_ARM.glb"></a-asset-item>
       <img id="concrete-floor" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/Concrete031_1K_Color.jpg?v=1680522802651">
@@ -19,23 +125,34 @@
       <img id="screen-ui" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/scifi-screen.jpg?v=1680526458653">
     </a-assets>
 
-    <a-entity light="type: ambient; color: #999; intensity: 1"></a-entity>
-    <a-entity light="type: directional; color: #FFF; intensity: 0.8" position="-2 5 2"></a-entity>
+    <!-- Luces mejoradas -->
+    <a-entity light="type: ambient; color: #999; intensity: 0.6"></a-entity>
+    <a-entity light="type: directional; color: #FFF; intensity: 0.8" position="-2 5 2" castShadow="true"></a-entity>
     <a-entity light="type: spot; angle: 50; penumbra: 0.5; intensity: 2.5; castShadow: true;" position="0 4 0"></a-entity>
     
+    <!-- Suelo y paredes -->
     <a-plane material="src: #concrete-floor; repeat: 5 5" position="0 0 0" rotation="-90 0 0" width="10" height="10" shadow="receive: true"></a-plane>
     <a-plane material="src: #metal-wall; repeat: 4 2; color: #BBB" width="10" height="5" position="0 2.5 -5"></a-plane>
     <a-plane material="src: #metal-wall; repeat: 4 2; color: #BBB" width="10" height="5" position="-5 2.5 0" rotation="0 90 0"></a-plane>
     <a-plane color="#FFD700" width="6" height="0.15" position="-2 0.01 2.5" rotation="-90 0 0"></a-plane>
     <a-plane color="#FFD700" width="0.15" height="5" position="1 0.01 0" rotation="-90 0 0"></a-plane>
 
-    <a-entity id="robot" gltf-model="#robot-arm" position="0 0 0" shadow="cast: true"></a-entity>
+    <!-- Brazo robótico -->
+    <a-entity id="robot" gltf-model="#robot-arm" position="0 0 0" shadow="cast: true">
+      <!-- Estas entidades se usarán para animar partes específicas del robot -->
+      <a-entity id="robot-base" animation-mixer="clip: *;"></a-entity>
+    </a-entity>
+    
+    <!-- Cinta transportadora -->
     <a-entity id="conveyor-belt" position="-1.8 0.4 0" rotation="0 90 0">
       <a-box color="#333" depth="3" height="0.6" width="0.8"></a-box>
       <a-box id="conveyor-band" material="src: #conveyor-texture; repeat: 3 1" position="0 0.35 0" depth="3" height="0.1" width="0.7"></a-box>
     </a-entity>
+    
+    <!-- Caja para mover -->
     <a-box id="box-to-move" position="-1.8 0.9 0" depth="0.4" height="0.4" width="0.4" color="tomato" shadow="cast: true"></a-box>
 
+    <!-- Pallet -->
     <a-entity id="pallet" position="1.8 0 -1.5" shadow="cast: true">
         <a-box material="src: #wood-pallet" width="1.2" height="0.15" depth="1.0" position="0 0.075 0"></a-box>
         <a-box material="src: #wood-pallet" width="0.15" height="0.075" depth="1.0" position="-0.5 0.0325 0"></a-box>
@@ -43,6 +160,7 @@
         <a-box material="src: #wood-pallet" width="0.15" height="0.075" depth="1.0" position="0.5 0.0325 0"></a-box>
     </a-entity>
     
+    <!-- Estación de operador -->
     <a-entity id="operator-station" position="3.5 0 2.5">
         <a-box color="#7d8597" width="1.5" height="0.1" depth="0.8" position="0 1 0" shadow="cast: true"></a-box>
         <a-box color="#4a4e69" width="0.1" height="1" depth="0.1" position="-0.7 0.5 -0.35"></a-box>
@@ -52,6 +170,7 @@
         <a-cylinder color="#6c757d" radius="0.25" height="0.6" position="0 0.3 0.6" shadow="cast: true"></a-cylinder>
     </a-entity>
 
+    <!-- Elementos estructurales -->
     <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="-4.9 4 0" rotation="90 0 0"></a-cylinder>
     <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="-4.9 3.5 0" rotation="90 0 0"></a-cylinder>
     <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="0 4 -4.9" rotation="0 0 90"></a-cylinder>
@@ -61,8 +180,176 @@
     </a-entity>
     <a-plane material="src: #warning-sign" width="1" height="1" position="2 2 -4.9"></a-plane>
 
+    <!-- Cámara -->
     <a-entity camera look-controls wasd-controls position="0 1.8 4" fov="65"></a-entity>
     
   </a-scene>
+
+  <script>
+    // Variables globales
+    let isAnimating = false;
+    let animationInterval;
+    let boxAttached = false;
+    
+    // Inicialización cuando la escena esté cargada
+    document.querySelector('a-scene').addEventListener('loaded', function() {
+      console.log('Escena cargada, robot listo para controlar');
+    });
+    
+    // Actualizar valores de los sliders
+    function updateSliderValues() {
+      document.getElementById('base-value').textContent = document.getElementById('base-rotation').value + '°';
+      document.getElementById('shoulder-value').textContent = document.getElementById('shoulder-angle').value + '°';
+      document.getElementById('elbow-value').textContent = document.getElementById('elbow-angle').value + '°';
+      document.getElementById('wrist-value').textContent = document.getElementById('wrist-angle').value + '°';
+      document.getElementById('gripper-value').textContent = 
+        document.getElementById('gripper-state').value == 0 ? 'Cerrada' : 'Abierta';
+    }
+    
+    // Actualizar posición del robot basado en los controles
+    function updateRobot() {
+      updateSliderValues();
+      
+      // Aquí iría el código para aplicar las transformaciones al modelo 3D del robot
+      // Dependiendo de cómo esté estructurado el modelo GLTF, podrías necesitar
+      // acceder a diferentes partes del brazo robótico
+      
+      // Ejemplo de cómo podrías rotar partes del robot:
+      const baseRotation = document.getElementById('base-rotation').value;
+      const shoulderAngle = document.getElementById('shoulder-angle').value;
+      const elbowAngle = document.getElementById('elbow-angle').value;
+      const wristAngle = document.getElementById('wrist-angle').value;
+      const gripperState = document.getElementById('gripper-state').value;
+      
+      // En una implementación real, aquí aplicarías estas rotaciones
+      // a las partes específicas del modelo del robot
+      console.log(`Base: ${baseRotation}°, Hombro: ${shoulderAngle}°, Codo: ${elbowAngle}°, Muñeca: ${wristAngle}°, Pinza: ${gripperState}`);
+      
+      // Si el robot tiene la caja y cerramos la pinza, "agarrar" la caja
+      if (gripperState == 0 && isNearBox()) {
+        attachBoxToRobot();
+      } else if (gripperState == 1 && boxAttached) {
+        detachBoxFromRobot();
+      }
+    }
+    
+    // Verificar si el robot está cerca de la caja
+    function isNearBox() {
+      // En una implementación real, verificarías la posición del efector final
+      // del robot respecto a la caja
+      return true; // Simplificado para este ejemplo
+    }
+    
+    // Adjuntar la caja al robot
+    function attachBoxToRobot() {
+      if (!boxAttached) {
+        const box = document.getElementById('box-to-move');
+        box.setAttribute('animation', {
+          property: 'position',
+          to: {x: 0, y: 1.5, z: 0}, // Posición relativa al robot
+          dur: 500,
+          easing: 'easeInOutQuad'
+        });
+        boxAttached = true;
+      }
+    }
+    
+    // Soltar la caja del robot
+    function detachBoxFromRobot() {
+      if (boxAttached) {
+        const box = document.getElementById('box-to-move');
+        // Calcular posición final basada en la posición actual del robot
+        const finalPosition = calculateDropPosition();
+        box.setAttribute('animation', {
+          property: 'position',
+          to: finalPosition,
+          dur: 500,
+          easing: 'easeInOutQuad'
+        });
+        boxAttached = false;
+      }
+    }
+    
+    // Calcular posición donde soltar la caja
+    function calculateDropPosition() {
+      // En una implementación real, calcularías esto basado en la posición del robot
+      return {x: 1.8, y: 0.9, z: -1.5}; // Sobre el pallet
+    }
+    
+    // Movimientos predefinidos
+    function moveToPick() {
+      // Configurar valores para recoger la caja
+      document.getElementById('base-rotation').value = -45;
+      document.getElementById('shoulder-angle').value = -30;
+      document.getElementById('elbow-angle').value = 45;
+      document.getElementById('wrist-angle').value = 15;
+      document.getElementById('gripper-state').value = 1; // Abierta
+      updateRobot();
+    }
+    
+    function moveToPallet() {
+      // Configurar valores para colocar en el pallet
+      document.getElementById('base-rotation').value = 45;
+      document.getElementById('shoulder-angle').value = 20;
+      document.getElementById('elbow-angle').value = -30;
+      document.getElementById('wrist-angle').value = -10;
+      document.getElementById('gripper-state').value = 0; // Cerrada (suelta la caja)
+      updateRobot();
+    }
+    
+    function moveToHome() {
+      // Configurar valores para posición inicial
+      document.getElementById('base-rotation').value = 0;
+      document.getElementById('shoulder-angle').value = 0;
+      document.getElementById('elbow-angle').value = 0;
+      document.getElementById('wrist-angle').value = 0;
+      document.getElementById('gripper-state').value = 1; // Abierta
+      updateRobot();
+    }
+    
+    // Animación automática
+    function toggleAnimation() {
+      const btn = document.getElementById('animation-btn');
+      
+      if (!isAnimating) {
+        isAnimating = true;
+        btn.textContent = 'Detener Animación Automática';
+        
+        // Secuencia de animación
+        let step = 0;
+        animationInterval = setInterval(() => {
+          switch(step) {
+            case 0:
+              moveToPick();
+              break;
+            case 1:
+              document.getElementById('gripper-state').value = 0; // Cerrar pinza
+              updateRobot();
+              break;
+            case 2:
+              moveToPallet();
+              break;
+            case 3:
+              document.getElementById('gripper-state').value = 1; // Abrir pinza
+              updateRobot();
+              break;
+            case 4:
+              moveToHome();
+              step = -1; // Reiniciar ciclo
+              break;
+          }
+          step++;
+        }, 2000); // Cambiar cada 2 segundos
+        
+      } else {
+        isAnimating = false;
+        btn.textContent = 'Iniciar Animación Automática';
+        clearInterval(animationInterval);
+      }
+    }
+    
+    // Inicializar valores de los sliders
+    updateSliderValues();
+  </script>
 </body>
 </html>
