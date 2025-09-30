@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Célula de Producción - Brazo Robótico</title>
+  <title>Planta Industrial - Brazo Robótico</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.3/tween.umd.js"></script>
   <script src="./script.js"></script>
 </head>
 <body>
-  <a-scene background="color: #2E2E2E" robot-controller renderer="colorManagement: true">
+  <a-scene background="color: #404040" robot-controller renderer="colorManagement: true; physicallyCorrectLights: true">
 
     <a-assets>
       <a-asset-item id="robot-arm" src="./YASKAWA_ROBOTIC_ARM.glb"></a-asset-item>
       <img id="concrete-floor" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/Concrete031_1K_Color.jpg?v=1680522802651">
       <img id="metal-wall" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/MetalPlates006_1K_Color.jpg?v=1680522810486">
       <img id="conveyor-texture" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/Rubber001_1K_Color.jpg?v=1680522815664">
+      <img id="warning-sign" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/robot-warning-sign.png?v=1680524891823">
     </a-assets>
 
-    <a-entity light="type: ambient; color: #666; intensity: 0.8"></a-entity>
-    <a-entity light="type: directional; color: #FFF; intensity: 0.5" position="-2 5 2"></a-entity>
-    <a-entity light="type: spot; angle: 50; penumbra: 0.5; intensity: 1.5; castShadow: true;" position="0 3.5 0"></a-entity>
-
+    <a-entity light="type: ambient; color: #999; intensity: 1"></a-entity>
+    <a-entity light="type: directional; color: #FFF; intensity: 0.8" position="-2 5 2"></a-entity>
+    <a-entity light="type: spot; angle: 50; penumbra: 0.5; intensity: 2.5; castShadow: true;" position="0 4 0"></a-entity>
+    
     <a-plane material="src: #concrete-floor; repeat: 5 5" position="0 0 0" rotation="-90 0 0" width="10" height="10" shadow="receive: true"></a-plane>
     <a-plane material="src: #metal-wall; repeat: 4 2" width="10" height="5" position="0 2.5 -5"></a-plane>
     <a-plane material="src: #metal-wall; repeat: 4 2" width="10" height="5" position="-5 2.5 0" rotation="0 90 0"></a-plane>
@@ -40,6 +41,17 @@
       <a-box width="0.1" height="1.5" depth="0.1" position="0.7 0.75 0.35" color="#333"></a-box>
     </a-entity>
     <a-box id="box-to-move" position="-1.8 0.9 0" depth="0.4" height="0.4" width="0.4" color="tomato" shadow="cast: true"></a-box>
+
+    <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="-4.9 4 0" rotation="90 0 0"></a-cylinder>
+    <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="-4.9 3.5 0" rotation="90 0 0"></a-cylinder>
+    <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="0 4 -4.9" rotation="0 0 90"></a-cylinder>
+
+    <a-entity position="-3 1.5 -4.8">
+        <a-box color="#3d5a80" width="0.6" height="0.8" depth="0.2" shadow="cast: true"></a-box>
+        <a-cylinder color="#e63946" radius="0.08" height="0.1" position="0 0 0.11" rotation="90 0 0"></a-cylinder>
+    </a-entity>
+
+    <a-plane material="src: #warning-sign" width="1" height="1" position="2 2 -4.9"></a-plane>
 
     <a-entity camera look-controls wasd-controls position="0 1.8 4" fov="65"></a-entity>
     
