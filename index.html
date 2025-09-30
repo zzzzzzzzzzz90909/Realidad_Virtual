@@ -21,20 +21,16 @@
     <a-entity light="type: spot; angle: 50; penumbra: 0.5; intensity: 1.5; castShadow: true;" position="0 3.5 0"></a-entity>
 
     <a-plane material="src: #concrete-floor; repeat: 5 5" position="0 0 0" rotation="-90 0 0" width="10" height="10" shadow="receive: true"></a-plane>
-
     <a-plane material="src: #metal-wall; repeat: 4 2" width="10" height="5" position="0 2.5 -5"></a-plane>
     <a-plane material="src: #metal-wall; repeat: 4 2" width="10" height="5" position="-5 2.5 0" rotation="0 90 0"></a-plane>
-
     <a-plane color="#FFD700" width="6" height="0.15" position="-2 0.01 2.5" rotation="-90 0 0"></a-plane>
     <a-plane color="#FFD700" width="0.15" height="5" position="1 0.01 0" rotation="-90 0 0"></a-plane>
 
     <a-entity id="robot" gltf-model="#robot-arm" position="0 0 0" shadow="cast: true"></a-entity>
-    
     <a-entity id="conveyor-belt" position="-1.8 0.4 0" rotation="0 90 0">
       <a-box color="#333" depth="3" height="0.6" width="0.8"></a-box>
       <a-box id="conveyor-band" material="src: #conveyor-texture; repeat: 3 1" position="0 0.35 0" depth="3" height="0.1" width="0.7"></a-box>
     </a-entity>
-
     <a-entity id="shelf" position="1.8 0 -1.5">
       <a-box width="1.5" height="0.1" depth="0.8" position="0 0.5 0" color="#5C4033" shadow="cast: true"></a-box>
       <a-box width="1.5" height="0.1" depth="0.8" position="0 1.2 0" color="#5C4033" shadow="cast: true"></a-box>
@@ -43,10 +39,10 @@
       <a-box width="0.1" height="1.5" depth="0.1" position="-0.7 0.75 0.35" color="#333"></a-box>
       <a-box width="0.1" height="1.5" depth="0.1" position="0.7 0.75 0.35" color="#333"></a-box>
     </a-entity>
-
     <a-box id="box-to-move" position="-1.8 0.9 0" depth="0.4" height="0.4" width="0.4" color="tomato" shadow="cast: true"></a-box>
 
-    <a-entity camera look-controls position="0 1.8 4" fov="65"></a-entity>
+    <a-entity camera look-controls wasd-controls position="0 1.8 4" fov="65"></a-entity>
+    
   </a-scene>
 </body>
 </html>
