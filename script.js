@@ -2,10 +2,24 @@
 
 AFRAME.registerComponent('robot-controller', {
   init: function () {
+    this.sceneEl = this.el;
     this.robot = null;
-    this.box = document.querySelector('#box-to-move').object3D;
-    this.isAnimationRunning = false;
-    this.joints = []; // Usaremos un array para mantener el orden
+    this.joints = [];
+    this.boxQueue = [];
+    this.placedBoxCount = 0;
+    this.isProcessRunning = false;
+    
+    // --- PUNTOS CLAVE DE LA ESCENA ---
+    this.pickupPosition = new THREE.Vector3(-1.8, 0.9, 0); // Donde el robot recoge la caja
+    this.conveyorStartPosition = new THREE.Vector3(-1.8, 0.9, 1.4); // Donde aparece la caja
+    
+    // Posiciones en el palé para apilar 4 cajas
+    this.palletPositions = [
+        new THREE.Vector3(1.5, 0.22, -1.2),
+        new THREE.Vector3(2.1, 0.22, -1.2),
+        new THREE.Vector3(1.5, 0.22, -1.8),
+        new THREE.Vector3(2.1, 0.22, -1.8),
+    ];
 
     const robotEntity = document.querySelector('#robot');
     robotEntity.addEventListener('model-loaded', this.onModelLoaded.bind(this));
@@ -15,13 +29,8 @@ AFRAME.registerComponent('robot-controller', {
     this.robot = e.detail.model;
     console.log("Modelo del robot cargado. Buscando articulaciones...");
 
-    // --- BÚSQUEDA AUTOMÁTICA DE ARTICULACIONES ---
-    // Este método es más robusto porque no depende de nombres fijos.
-    // Busca los objetos principales que contienen las mallas (la geometría visible)
-    // en el orden en que aparecen en el archivo GLB.
     this.robot.traverse(node => {
       if (node.isMesh && node.parent.name.includes('Link')) {
-         // Evita duplicados y añade el nodo padre que es el que se debe rotar
          if (!this.joints.includes(node.parent)) {
             this.joints.push(node.parent);
          }
@@ -29,93 +38,109 @@ AFRAME.registerComponent('robot-controller', {
     });
 
     console.log(`Se encontraron ${this.joints.length} articulaciones.`);
-    this.joints.forEach((joint, index) => {
-        console.log(`Articulación ${index}: ${joint.name}`);
-    });
-
-    // Validar que se encontraron suficientes articulaciones
     if (this.joints.length < 6) {
-      console.error("¡Alerta! No se encontraron suficientes articulaciones. El modelo puede tener una estructura inesperada.");
+      console.error("No se encontraron suficientes articulaciones.");
       return;
     }
     
-    // Inicia la animación automáticamente después de 1 segundo
-    console.log("Iniciando secuencia de animación automática en 1 segundo...");
-    setTimeout(() => {
-      this.startFullSequence();
-    }, 1000);
+    console.log("Iniciando proceso industrial...");
+    this.startProcess();
+  },
+  
+  startProcess: function() {
+    if (this.placedBoxCount >= this.palletPositions.length) {
+        console.log("Proceso completado. Palé lleno.");
+        return;
+    }
+    this.isProcessRunning = true;
+    this.spawnAndMoveBoxOnConveyor();
   },
 
-  createTween: function (joint, to, duration = 1500) {
+  spawnAndMoveBoxOnConveyor: function() {
+    const boxEl = document.createElement('a-box');
+    boxEl.setAttribute('color', '#B5651D');
+    boxEl.setAttribute('width', 0.4);
+    boxEl.setAttribute('height', 0.4);
+    boxEl.setAttribute('depth', 0.4);
+    boxEl.setAttribute('position', this.conveyorStartPosition);
+    boxEl.setAttribute('shadow', 'cast: true');
+    this.sceneEl.appendChild(boxEl);
+    this.boxQueue.push(boxEl);
+
+    // Animar la caja moviéndose por la cinta
+    new TWEEN.Tween(boxEl.object3D.position)
+      .to(this.pickupPosition, 3000) // 3 segundos de viaje
+      .easing(TWEEN.Easing.Linear.None)
+      .onComplete(() => {
+        // Cuando la caja llega, el robot la recoge
+        this.pickupAndPlaceBox();
+      })
+      .start();
+  },
+
+  pickupAndPlaceBox: function() {
+    const [base, link1, link2, link3, link4, link5, gripper] = this.joints;
+    const targetPalletPos = this.palletPositions[this.placedBoxCount];
+    const currentBox = this.boxQueue.shift();
+
+    // 1. Moverse sobre la caja en la cinta
+    const moveToPickup = this.createTween(base, { y: -90 })
+        .chain(this.createTween(link1, { x: -35 }))
+        .chain(this.createTween(link2, { x: 50 }))
+        .chain(this.createTween(link4, { x: -90 }));
+
+    // 2. Bajar para recoger
+    const grab = this.createTween(link1, { x: -20 })
+        .chain(this.createTween(link2, { x: 35 }));
+        
+    // 3. Moverse a la zona del palé
+    const moveToPallet = this.createTween(base, { y: 90 }, 2000)
+        .chain(this.createTween(link1, { x: -35 }))
+        .chain(this.createTween(link2, { x: 50 }));
+
+    // 4. Bajar para soltar
+    const release = this.createTween(link1, { x: -20 })
+        .chain(this.createTween(link2, { x: 35 }));
+        
+    // 5. Volver a casa
+    const returnHome = this.createTween(base, { y: 0 })
+        .chain(this.createTween(link1, { x: 0 }))
+        .chain(this.createTween(link2, { x: 0 }))
+        .chain(this.createTween(link4, { x: 0 }));
+
+    // --- Encadenar secuencias y acciones ---
+    moveToPickup.chain(grab);
+    grab.chain(moveToPallet);
+    moveToPallet.chain(release);
+    release.chain(returnHome);
+
+    grab.onStart(() => gripper.attach(currentBox.object3D));
+    release.onStart(() => {
+        this.sceneEl.object3D.attach(currentBox.object3D);
+        currentBox.object3D.position.copy(targetPalletPos); // Posición final precisa
+    });
+    returnHome.onComplete(() => {
+        this.placedBoxCount++;
+        this.startProcess(); // Inicia el ciclo para la siguiente caja
+    });
+    
+    moveToPickup.start();
+  },
+
+  createTween: function (joint, to, duration = 1200) {
     const from = { x: joint.rotation.x, y: joint.rotation.y, z: joint.rotation.z };
     const toRad = {
       x: THREE.MathUtils.degToRad(to.x ?? THREE.MathUtils.radToDeg(from.x)),
       y: THREE.MathUtils.degToRad(to.y ?? THREE.MathUtils.radToDeg(from.y)),
       z: THREE.MathUtils.degToRad(to.z ?? THREE.MathUtils.radToDeg(from.z)),
     };
-
     return new TWEEN.Tween(from)
       .to(toRad, duration)
-      .onUpdate(() => {
-        joint.rotation.set(from.x, from.y, from.z);
-      })
+      .onUpdate(() => { joint.rotation.set(from.x, from.y, from.z); })
       .easing(TWEEN.Easing.Quadratic.InOut);
   },
   
-  startFullSequence: function () {
-    if (this.isAnimationRunning) return;
-    this.isAnimationRunning = true;
-
-    // Asignamos las articulaciones encontradas a variables para mayor claridad
-    const [base, link1, link2, link3, link4, link5, gripper] = this.joints;
-
-    // --- Secuencia de movimientos ---
-    const moveToBox = this.createTween(base, { y: -65 })
-      .chain(this.createTween(link1, { x: -45 }))
-      .chain(this.createTween(link2, { x: 70 }))
-      .chain(this.createTween(link4, { x: -115 }));
-
-    const grabBox = this.createTween(link1, { x: -30 })
-      .chain(this.createTween(link2, { x: 45 }));
-
-    const moveToDropzone = this.createTween(base, { y: 65 }, 2000)
-      .chain(this.createTween(link1, { x: -45 }))
-      .chain(this.createTween(link2, { x: 70 }));
-    
-    const releaseBox = this.createTween(link1, { x: -30 })
-      .chain(this.createTween(link2, { x: 45 }));
-
-    const returnToHome = this.createTween(base, { y: 0 }, 2000)
-      .chain(this.createTween(link1, { x: 0 }))
-      .chain(this.createTween(link2, { x: 0 }))
-      .chain(this.createTween(link4, { x: 0 }));
-
-    // --- Encadenar todas las secuencias ---
-    moveToBox.chain(grabBox);
-    grabBox.chain(moveToDropzone);
-    moveToDropzone.chain(releaseBox);
-    releaseBox.chain(returnToHome);
-    
-    // --- Acciones especiales ---
-    grabBox.onStart(() => {
-      console.log("Agarrando la caja...");
-      gripper.attach(this.box);
-    });
-    
-    releaseBox.onStart(() => {
-      console.log("Soltando la caja...");
-      this.el.sceneEl.object3D.attach(this.box);
-    });
-    
-    returnToHome.onComplete(() => {
-        console.log("Secuencia completada.");
-        this.isAnimationRunning = false;
-    });
-
-    moveToBox.start();
-  },
-  
-  tick: function (time, timeDelta) {
+  tick: function (time) {
     TWEEN.update(time);
   }
 });
