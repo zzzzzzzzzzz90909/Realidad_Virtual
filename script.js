@@ -5,40 +5,37 @@ AFRAME.registerComponent('robot-controller', {
     this.robot = null;
     this.box = document.querySelector('#box-to-move').object3D;
     this.isAnimationRunning = false;
-
-    // --- ¡IMPORTANTE! Nombres de las articulaciones ---
-    // Estos nombres deben coincidir con los de tu archivo .glb
-    this.jointNames = [
-      'Base_Link',     // Gira en Y
-      'Link_1',        // Gira en X
-      'Link_2',        // Gira en X
-      'Link_3',        // Gira en Y
-      'Link_4',        // Gira en X
-      'Link_5',        // Gira en Y
-      'Link_6_Flange'  // La "pinza" o punto final
-    ];
-    this.joints = {};
+    this.joints = []; // Usaremos un array para mantener el orden
 
     const robotEntity = document.querySelector('#robot');
-    // Esperamos a que el modelo se cargue para iniciar todo el proceso
     robotEntity.addEventListener('model-loaded', this.onModelLoaded.bind(this));
   },
 
   onModelLoaded: function (e) {
     this.robot = e.detail.model;
-    console.log("Modelo del robot cargado.");
+    console.log("Modelo del robot cargado. Buscando articulaciones...");
 
-    // Buscar y guardar las articulaciones por su nombre
+    // --- BÚSQUEDA AUTOMÁTICA DE ARTICULACIONES ---
+    // Este método es más robusto porque no depende de nombres fijos.
+    // Busca los objetos principales que contienen las mallas (la geometría visible)
+    // en el orden en que aparecen en el archivo GLB.
     this.robot.traverse(node => {
-      if (this.jointNames.includes(node.name)) {
-        console.log(`Articulación encontrada: ${node.name}`);
-        this.joints[node.name] = node;
+      if (node.isMesh && node.parent.name.includes('Link')) {
+         // Evita duplicados y añade el nodo padre que es el que se debe rotar
+         if (!this.joints.includes(node.parent)) {
+            this.joints.push(node.parent);
+         }
       }
     });
 
-    // Validar que se encontraron las articulaciones
-    if (Object.keys(this.joints).length < this.jointNames.length) {
-      console.error("¡Alerta! No se encontraron todas las articulaciones. Revisa los nombres en `this.jointNames`.");
+    console.log(`Se encontraron ${this.joints.length} articulaciones.`);
+    this.joints.forEach((joint, index) => {
+        console.log(`Articulación ${index}: ${joint.name}`);
+    });
+
+    // Validar que se encontraron suficientes articulaciones
+    if (this.joints.length < 6) {
+      console.error("¡Alerta! No se encontraron suficientes articulaciones. El modelo puede tener una estructura inesperada.");
       return;
     }
     
@@ -49,7 +46,6 @@ AFRAME.registerComponent('robot-controller', {
     }, 1000);
   },
 
-  // Función para crear una animación (un "tween") para una articulación
   createTween: function (joint, to, duration = 1500) {
     const from = { x: joint.rotation.x, y: joint.rotation.y, z: joint.rotation.z };
     const toRad = {
@@ -66,36 +62,33 @@ AFRAME.registerComponent('robot-controller', {
       .easing(TWEEN.Easing.Quadratic.InOut);
   },
   
-  // Secuencia principal de animación: recoger y soltar
   startFullSequence: function () {
-    if (!this.robot || this.isAnimationRunning) return;
+    if (this.isAnimationRunning) return;
     this.isAnimationRunning = true;
+
+    // Asignamos las articulaciones encontradas a variables para mayor claridad
+    const [base, link1, link2, link3, link4, link5, gripper] = this.joints;
+
+    // --- Secuencia de movimientos ---
+    const moveToBox = this.createTween(base, { y: -65 })
+      .chain(this.createTween(link1, { x: -45 }))
+      .chain(this.createTween(link2, { x: 70 }))
+      .chain(this.createTween(link4, { x: -115 }));
+
+    const grabBox = this.createTween(link1, { x: -30 })
+      .chain(this.createTween(link2, { x: 45 }));
+
+    const moveToDropzone = this.createTween(base, { y: 65 }, 2000)
+      .chain(this.createTween(link1, { x: -45 }))
+      .chain(this.createTween(link2, { x: 70 }));
     
-    // --- Definición de la secuencia de movimientos ---
-    // 1. Moverse sobre la caja
-    const moveToBox = this.createTween(this.joints.Base_Link, { y: -65 })
-      .chain(this.createTween(this.joints.Link_1, { x: -45 }))
-      .chain(this.createTween(this.joints.Link_2, { x: 70 }))
-      .chain(this.createTween(this.joints.Link_4, { x: -115 }));
+    const releaseBox = this.createTween(link1, { x: -30 })
+      .chain(this.createTween(link2, { x: 45 }));
 
-    // 2. Bajar para recoger
-    const grabBox = this.createTween(this.joints.Link_1, { x: -30 })
-      .chain(this.createTween(this.joints.Link_2, { x: 45 }));
-
-    // 3. Moverse a la zona de destino
-    const moveToDropzone = this.createTween(this.joints.Base_Link, { y: 65 }, 2000)
-      .chain(this.createTween(this.joints.Link_1, { x: -45 }))
-      .chain(this.createTween(this.joints.Link_2, { x: 70 }));
-    
-    // 4. Bajar para soltar
-    const releaseBox = this.createTween(this.joints.Link_1, { x: -30 })
-      .chain(this.createTween(this.joints.Link_2, { x: 45 }));
-
-    // 5. Volver a la posición de reposo
-    const returnToHome = this.createTween(this.joints.Base_Link, { y: 0 }, 2000)
-      .chain(this.createTween(this.joints.Link_1, { x: 0 }))
-      .chain(this.createTween(this.joints.Link_2, { x: 0 }))
-      .chain(this.createTween(this.joints.Link_4, { x: 0 }));
+    const returnToHome = this.createTween(base, { y: 0 }, 2000)
+      .chain(this.createTween(link1, { x: 0 }))
+      .chain(this.createTween(link2, { x: 0 }))
+      .chain(this.createTween(link4, { x: 0 }));
 
     // --- Encadenar todas las secuencias ---
     moveToBox.chain(grabBox);
@@ -103,16 +96,15 @@ AFRAME.registerComponent('robot-controller', {
     moveToDropzone.chain(releaseBox);
     releaseBox.chain(returnToHome);
     
-    // --- Acciones especiales en puntos clave ---
+    // --- Acciones especiales ---
     grabBox.onStart(() => {
       console.log("Agarrando la caja...");
-      const gripper = this.joints['Link_6_Flange'];
-      gripper.attach(this.box); // La caja se hace hija de la pinza
+      gripper.attach(this.box);
     });
     
     releaseBox.onStart(() => {
       console.log("Soltando la caja...");
-      this.el.sceneEl.object3D.attach(this.box); // La caja vuelve a ser hija de la escena
+      this.el.sceneEl.object3D.attach(this.box);
     });
     
     returnToHome.onComplete(() => {
@@ -120,11 +112,9 @@ AFRAME.registerComponent('robot-controller', {
         this.isAnimationRunning = false;
     });
 
-    // Iniciar la primera animación de toda la cadena
     moveToBox.start();
   },
   
-  // Necesario para que TWEEN se actualice en cada frame
   tick: function (time, timeDelta) {
     TWEEN.update(time);
   }
