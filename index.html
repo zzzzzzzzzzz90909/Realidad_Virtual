@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Planta Industrial - Brazo Robótico</title>
+  <title>Planta Industrial v3 - Brazo Robótico</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.3/tween.umd.js"></script>
   <script src="./script.js"></script>
@@ -15,6 +15,8 @@
       <img id="metal-wall" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/MetalPlates006_1K_Color.jpg?v=1680522810486">
       <img id="conveyor-texture" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/Rubber001_1K_Color.jpg?v=1680522815664">
       <img id="warning-sign" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/robot-warning-sign.png?v=1680524891823">
+      <img id="wood-pallet" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/Planks032_1K_Color.jpg?v=1680526462589">
+      <img id="screen-ui" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/scifi-screen.jpg?v=1680526458653">
     </a-assets>
 
     <a-entity light="type: ambient; color: #999; intensity: 1"></a-entity>
@@ -22,8 +24,8 @@
     <a-entity light="type: spot; angle: 50; penumbra: 0.5; intensity: 2.5; castShadow: true;" position="0 4 0"></a-entity>
     
     <a-plane material="src: #concrete-floor; repeat: 5 5" position="0 0 0" rotation="-90 0 0" width="10" height="10" shadow="receive: true"></a-plane>
-    <a-plane material="src: #metal-wall; repeat: 4 2" width="10" height="5" position="0 2.5 -5"></a-plane>
-    <a-plane material="src: #metal-wall; repeat: 4 2" width="10" height="5" position="-5 2.5 0" rotation="0 90 0"></a-plane>
+    <a-plane material="src: #metal-wall; repeat: 4 2; color: #BBB" width="10" height="5" position="0 2.5 -5"></a-plane>
+    <a-plane material="src: #metal-wall; repeat: 4 2; color: #BBB" width="10" height="5" position="-5 2.5 0" rotation="0 90 0"></a-plane>
     <a-plane color="#FFD700" width="6" height="0.15" position="-2 0.01 2.5" rotation="-90 0 0"></a-plane>
     <a-plane color="#FFD700" width="0.15" height="5" position="1 0.01 0" rotation="-90 0 0"></a-plane>
 
@@ -32,25 +34,31 @@
       <a-box color="#333" depth="3" height="0.6" width="0.8"></a-box>
       <a-box id="conveyor-band" material="src: #conveyor-texture; repeat: 3 1" position="0 0.35 0" depth="3" height="0.1" width="0.7"></a-box>
     </a-entity>
-    <a-entity id="shelf" position="1.8 0 -1.5">
-      <a-box width="1.5" height="0.1" depth="0.8" position="0 0.5 0" color="#5C4033" shadow="cast: true"></a-box>
-      <a-box width="1.5" height="0.1" depth="0.8" position="0 1.2 0" color="#5C4033" shadow="cast: true"></a-box>
-      <a-box width="0.1" height="1.5" depth="0.1" position="-0.7 0.75 -0.35" color="#333"></a-box>
-      <a-box width="0.1" height="1.5" depth="0.1" position="0.7 0.75 -0.35" color="#333"></a-box>
-      <a-box width="0.1" height="1.5" depth="0.1" position="-0.7 0.75 0.35" color="#333"></a-box>
-      <a-box width="0.1" height="1.5" depth="0.1" position="0.7 0.75 0.35" color="#333"></a-box>
-    </a-entity>
     <a-box id="box-to-move" position="-1.8 0.9 0" depth="0.4" height="0.4" width="0.4" color="tomato" shadow="cast: true"></a-box>
+
+    <a-entity id="pallet" position="1.8 0 -1.5" shadow="cast: true">
+        <a-box material="src: #wood-pallet" width="1.2" height="0.15" depth="1.0" position="0 0.075 0"></a-box>
+        <a-box material="src: #wood-pallet" width="0.15" height="0.075" depth="1.0" position="-0.5 0.0325 0"></a-box>
+        <a-box material="src: #wood-pallet" width="0.15" height="0.075" depth="1.0" position="0 0.0325 0"></a-box>
+        <a-box material="src: #wood-pallet" width="0.15" height="0.075" depth="1.0" position="0.5 0.0325 0"></a-box>
+    </a-entity>
+    
+    <a-entity id="operator-station" position="3.5 0 2.5">
+        <a-box color="#7d8597" width="1.5" height="0.1" depth="0.8" position="0 1 0" shadow="cast: true"></a-box>
+        <a-box color="#4a4e69" width="0.1" height="1" depth="0.1" position="-0.7 0.5 -0.35"></a-box>
+        <a-box color="#4a4e69" width="0.1" height="1" depth="0.1" position="0.7 0.5 -0.35"></a-box>
+        <a-box color="#222" width="0.9" height="0.6" depth="0.05" position="0 1.35 -0.3" shadow="cast: true"></a-box>
+        <a-plane material="src: #screen-ui" width="0.8" height="0.5" position="0 1.35 -0.27"></a-plane>
+        <a-cylinder color="#6c757d" radius="0.25" height="0.6" position="0 0.3 0.6" shadow="cast: true"></a-cylinder>
+    </a-entity>
 
     <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="-4.9 4 0" rotation="90 0 0"></a-cylinder>
     <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="-4.9 3.5 0" rotation="90 0 0"></a-cylinder>
     <a-cylinder color="#A5A5A5" radius="0.1" height="10" position="0 4 -4.9" rotation="0 0 90"></a-cylinder>
-
     <a-entity position="-3 1.5 -4.8">
         <a-box color="#3d5a80" width="0.6" height="0.8" depth="0.2" shadow="cast: true"></a-box>
         <a-cylinder color="#e63946" radius="0.08" height="0.1" position="0 0 0.11" rotation="90 0 0"></a-cylinder>
     </a-entity>
-
     <a-plane material="src: #warning-sign" width="1" height="1" position="2 2 -4.9"></a-plane>
 
     <a-entity camera look-controls wasd-controls position="0 1.8 4" fov="65"></a-entity>
