@@ -111,18 +111,25 @@
         // Posición de la caja en el pallet (CORREGIDA)
         const palletPosition = new THREE.Vector3(1.8, 0.22, -1.5);
 
-        // SECUENCIA MEJORADA - MOVIENDO MÁS ARTICULACIONES
-        // 1. Movimiento hacia la caja en el conveyor
-        const moveToBox = this.createTween(this.baseAxis, { y: -65 }, 2000)
-          .chain(this.createTween(this.sAxis, { z: -45 }, 1500))
-          .chain(this.createTween(this.lAxis, { z: 70 }, 1500))
-          .onStart(() => console.log("Moviendo hacia la caja..."));
+        // SECUENCIA MEJORADA - MOVIMIENTO COORDINADO DE TODAS LAS ARTICULACIONES
+        
+        // 1. MOVIMIENTO HACIA LA CAJA (todas las articulaciones se mueven coordinadamente)
+        const moveToBox = this.createTween(this.baseAxis, { y: -60 }, 1800)
+          .chain(this.createTween(this.sAxis, { z: -40 }, 1200))
+          .chain(this.createTween(this.lAxis, { z: 60 }, 1200))
+          .chain(this.createTween(this.uAxis, { z: 20 }, 800))
+          .onStart(() => console.log("🔄 Moviendo todas las articulaciones hacia la caja..."));
 
-        // 2. Agarrar la caja (movimientos más suaves)
-        const grabBox = this.createTween(this.sAxis, { z: -30 }, 1000)
-          .chain(this.createTween(this.lAxis, { z: 45 }, 1000))
+        // 2. AGARRAR LA CAJA (movimiento coordinado de aproximación)
+        const approachBox = this.createTween(this.sAxis, { z: -50 }, 800)
+          .chain(this.createTween(this.lAxis, { z: 70 }, 800))
+          .chain(this.createTween(this.uAxis, { z: 10 }, 600));
+
+        // 3. AGARRAR LA CAJA (movimiento final de agarre)
+        const grabBox = this.createTween(this.sAxis, { z: -45 }, 600)
+          .chain(this.createTween(this.lAxis, { z: 65 }, 600))
           .onStart(() => {
-            console.log("Agarrando la caja...");
+            console.log("🎯 Agarre coordinado de la caja...");
             // Usar la articulación más adecuada para agarrar
             const gripper = this.bAxis || this.rAxis || this.lAxis;
             if (gripper) {
@@ -130,53 +137,65 @@
             }
           });
 
-        // 3. Levantar y mover hacia la zona de descarga
-        const liftAndMove = this.createTween(this.sAxis, { z: -15 }, 1000)
-          .chain(this.createTween(this.lAxis, { z: 30 }, 1000))
-          .chain(this.createTween(this.baseAxis, { y: 65 }, 2500))
-          .onStart(() => console.log("Moviendo hacia zona de descarga..."));
+        // 4. LEVANTAR LA CAJA (movimiento coordinado de elevación)
+        const liftBox = this.createTween(this.sAxis, { z: -30 }, 1000)
+          .chain(this.createTween(this.lAxis, { z: 50 }, 1000))
+          .chain(this.createTween(this.uAxis, { z: 30 }, 800))
+          .onStart(() => console.log("⬆️ Levantando caja coordinadamente..."));
 
-        // 4. Posicionar sobre el pallet
-        const positionOverPallet = this.createTween(this.sAxis, { z: -45 }, 1500)
-          .chain(this.createTween(this.lAxis, { z: 70 }, 1500))
-          .onStart(() => console.log("Posicionando sobre el pallet..."));
+        // 5. MOVER HACIA EL PALLET (rotación coordinada)
+        const moveToPallet = this.createTween(this.baseAxis, { y: 50 }, 2000)
+          .chain(this.createTween(this.sAxis, { z: -25 }, 800))
+          .chain(this.createTween(this.lAxis, { z: 45 }, 800))
+          .onStart(() => console.log("🔄 Rotando hacia el pallet..."));
 
-        // 5. Soltar la caja
-        const releaseBox = this.createTween(this.sAxis, { z: -30 }, 1000)
-          .chain(this.createTween(this.lAxis, { z: 45 }, 1000))
+        // 6. POSICIONAR SOBRE EL PALLET (movimiento coordinado de descenso)
+        const positionOverPallet = this.createTween(this.sAxis, { z: -40 }, 1000)
+          .chain(this.createTween(this.lAxis, { z: 60 }, 1000))
+          .chain(this.createTween(this.uAxis, { z: 15 }, 600))
+          .onStart(() => console.log("📦 Posicionando sobre el pallet..."));
+
+        // 7. SOLTAR LA CAJA (movimiento coordinado de liberación)
+        const releaseBox = this.createTween(this.sAxis, { z: -35 }, 600)
+          .chain(this.createTween(this.lAxis, { z: 55 }, 600))
           .onStart(() => {
-            console.log("Soltando la caja en el pallet...");
+            console.log("🔄 Liberando caja en el pallet...");
             // Devolver la caja a la escena principal
             this.el.sceneEl.object3D.attach(this.box);
             // POSICIÓN CORREGIDA - en el pallet
             this.box.position.copy(palletPosition);
           });
 
-        // 6. Retirar brazo
-        const retractArm = this.createTween(this.sAxis, { z: -15 }, 1000)
-          .chain(this.createTween(this.lAxis, { z: 30 }, 1000));
+        // 8. RETIRAR BRAZO (movimiento coordinado de retirada)
+        const retractArm = this.createTween(this.sAxis, { z: -20 }, 800)
+          .chain(this.createTween(this.lAxis, { z: 40 }, 800))
+          .chain(this.createTween(this.uAxis, { z: 25 }, 600))
+          .onStart(() => console.log("↗️ Retirando brazo coordinadamente..."));
 
-        // 7. Volver a la posición inicial
-        const returnToHome = this.createTween(this.baseAxis, { y: 0 }, 2000)
-          .chain(this.createTween(this.sAxis, { z: 0 }, 1500))
-          .chain(this.createTween(this.lAxis, { z: 0 }, 1500))
+        // 9. VOLVER A POSICIÓN INICIAL (movimiento coordinado completo)
+        const returnToHome = this.createTween(this.baseAxis, { y: 0 }, 1800)
+          .chain(this.createTween(this.sAxis, { z: 0 }, 1200))
+          .chain(this.createTween(this.lAxis, { z: 0 }, 1200))
+          .chain(this.createTween(this.uAxis, { z: 0 }, 800))
           .onComplete(() => {
-            console.log("✓ Secuencia completada. Reiniciando en 2 segundos...");
+            console.log("✅ Secuencia completada. Reiniciando en 3 segundos...");
             this.isAnimationRunning = false;
             
-            // REINICIAR LA ANIMACIÓN después de 2 segundos
+            // REINICIAR LA ANIMACIÓN después de 3 segundos
             setTimeout(() => {
-              console.log("🔄 Reiniciando secuencia...");
+              console.log("🔄 Reiniciando secuencia completa...");
               // Resetear posición de la caja al conveyor
               this.box.position.set(-1.8, 0.9, 0);
               this.startFullSequence();
-            }, 2000);
+            }, 3000);
           });
 
-        // Encadenar toda la secuencia
-        moveToBox.chain(grabBox);
-        grabBox.chain(liftAndMove);
-        liftAndMove.chain(positionOverPallet);
+        // ENCADENAR TODA LA SECUENCIA COORDINADA
+        moveToBox.chain(approachBox);
+        approachBox.chain(grabBox);
+        grabBox.chain(liftBox);
+        liftBox.chain(moveToPallet);
+        moveToPallet.chain(positionOverPallet);
         positionOverPallet.chain(releaseBox);
         releaseBox.chain(retractArm);
         retractArm.chain(returnToHome);
