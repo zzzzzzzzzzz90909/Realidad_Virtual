@@ -5,8 +5,10 @@
   <body>
     <a-scene background="color: #ECECEC">
       
-      <!-- Cámara -->
-      <a-entity position="0 2 6" camera look-controls></a-entity>
+      <!-- Rig de cámara con movimiento (WASD + mouse) -->
+      <a-entity id="rig" movement-controls position="0 1.6 6">
+        <a-entity camera look-controls></a-entity>
+      </a-entity>
 
       <!-- Luces -->
       <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
@@ -16,34 +18,18 @@
       <a-plane rotation="-90 0 0" width="12" height="12" color="#AAA"></a-plane>
 
       <!-- Caja para recoger -->
-      <a-box id="caja" color="red" position="0 0.5 -1" depth="0.5" height="0.5" width="0.5"></a-box>
+      <a-box id="caja" color="red" position="0 0.5 -1" depth="0.5" height="0.5" width="0.5"
+             animation="property: position; from: 0 0.5 -1; to: 0 2 -1; dur: 3000; dir: alternate; loop: true; easing: easeInOutSine">
+      </a-box>
 
-      <!-- Brazo robótico (GP12_AR1440) -->
-      <a-entity id="robot" gltf-model="GP12_AR1440.glb"
+      <!-- Brazo robótico -->
+      <a-entity id="robot" 
+                gltf-model="GP12_AR1440.glb"
                 scale="0.5 0.5 0.5"
-                position="0 0 0">
-
-        <!-- Simulación de movimiento del brazo -->
-        <a-animation 
-            attribute="rotation" 
-            to="0 30 0" 
-            dur="2000" 
-            direction="alternate"
-            repeat="indefinite">
-        </a-animation>
-
+                position="0 0 0"
+                animation="property: rotation; to: 0 30 0; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine">
       </a-entity>
 
-      <!-- Animación de la caja (como si la levantara) -->
-      <a-animation 
-          attribute="position"
-          begin="pickup"
-          dur="3000"
-          from="0 0.5 -1"
-          to="0 2 -1"
-          fill="forwards"
-          easing="ease-in-out"
-          repeat="indefinite"
-          direction="alternate"
-          startEvents="pickup">
-      </a-anim
+    </a-scene>
+  </body>
+</html>
