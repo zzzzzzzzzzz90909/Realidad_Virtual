@@ -1,62 +1,48 @@
 <html>
   <head>
-    <!-- A-Frame 1.7.0 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.7.0/aframe.min.js"></script>
   </head>
   <body>
     <a-scene background="color: #ECECEC">
-
-      <!-- Cámara con movimiento -->
-      <a-entity id="rig" movement-controls position="0 1.6 8">
-        <a-entity camera look-controls></a-entity>
-      </a-entity>
+      
+      <!-- Cámara -->
+      <a-entity position="0 1.6 4" camera look-controls></a-entity>
 
       <!-- Luces -->
-      <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
+      <a-entity light="type: directional; intensity: 1" position="2 4 5"></a-entity>
       <a-entity light="type: ambient; intensity: 0.5"></a-entity>
 
-      <!-- Piso -->
-      <a-plane rotation="-90 0 0" width="20" height="20" color="#888"></a-plane>
+      <!-- Suelo -->
+      <a-plane rotation="-90 0 0" width="10" height="10" color="#CCC"></a-plane>
 
-      <!-- Paredes -->
-      <a-box position="0 2 -10" depth="0.5" height="4" width="20" color="#555"></a-box>
-      <a-box position="-10 2 0" depth="20" height="4" width="0.5" color="#555"></a-box>
-      <a-box position="10 2 0" depth="20" height="4" width="0.5" color="#555"></a-box>
-
-      <!-- Mesa -->
-      <a-box position="0 0.75 -2" depth="2" height="1.5" width="2" color="#333"></a-box>
-
-      <!-- Banda transportadora -->
-      <a-box position="4 0.5 0" depth="6" height="1" width="2" color="#444"></a-box>
-
-      <!-- Caja -->
-      <a-box id="caja" color="red" depth="0.5" height="0.5" width="0.5" position="0 1.5 -2"></a-box>
-
-      <!-- Robot -->
-      <a-entity id="robot"
-                gltf-model="GP12_AR1440.glb"
-                scale="0.4 0.4 0.4"
-                position="-1 0 -1"
-                rotation="0 0 0">
-
-        <!-- Secuencia de movimiento del brazo -->
-        <a-animation id="girar1" attribute="rotation" to="0 30 0" dur="1500" begin="start"></a-animation>
-        <a-animation id="bajar1" attribute="position" to="-1 -0.5 -1" dur="1500" begin="girar1"></a-animation>
-        <a-animation id="subir"  attribute="position" to="-1 0 -1" dur="1500" begin="bajar1"></a-animation>
-        <a-animation id="girar2" attribute="rotation" to="0 -60 0" dur="2000" begin="subir"></a-animation>
-        <a-animation id="bajar2" attribute="position" to="-1 -0.5 -1" dur="1500" begin="girar2"></a-animation>
-        <a-animation id="reset"  attribute="rotation" to="0 0 0" dur="2000" begin="bajar2"></a-animation>
+      <!-- Brazo robótico -->
+      <a-entity id="robot" 
+                gltf-model="YASKAWA_ROBOTIC_ARM.glb" 
+                scale="0.5 0.5 0.5"
+                position="0 0 0"
+                rotation="0 0 0"
+                animation__1="property: rotation; to: 0 45 0; dur: 1500; startEvents: start"
+                animation__2="property: position; to: 0 -0.3 0; dur: 1500; startEvents: step1"
+                animation__3="property: position; to: 0 0 0; dur: 1500; startEvents: step2"
+                animation__4="property: rotation; to: 0 -45 0; dur: 2000; startEvents: step3"
+                animation__5="property: position; to: 0 -0.3 0; dur: 1500; startEvents: step4"
+                animation__6="property: rotation; to: 0 0 0; dur: 2000; startEvents: step5">
       </a-entity>
 
-      <!-- Animación de la caja sincronizada -->
-      <a-animation attribute="position" from="0 1.5 -2" to="-1 1 -1"
-                   dur="3000" begin="girar1" fill="forwards"></a-animation>
-      <a-animation attribute="position" from="-1 1 -1" to="4 1 0"
-                   dur="3000" begin="girar2" fill="forwards"></a-animation>
+      <!-- Script para encadenar movimientos -->
+      <script>
+        const robot = document.querySelector("#robot");
 
-      <!-- Disparador automático -->
-      <a-entity id="control" position="0 0 0" 
-        event-set__1="_event: loaded; _target: #robot; start: ;"></a-entity>
+        // Inicia la secuencia
+        robot.emit("start");
+
+        // Encadena animaciones
+        robot.addEventListener("animationcomplete__1", () => robot.emit("step1"));
+        robot.addEventListener("animationcomplete__2", () => robot.emit("step2"));
+        robot.addEventListener("animationcomplete__3", () => robot.emit("step3"));
+        robot.addEventListener("animationcomplete__4", () => robot.emit("step4"));
+        robot.addEventListener("animationcomplete__5", () => robot.emit("step5"));
+      </script>
 
     </a-scene>
   </body>
