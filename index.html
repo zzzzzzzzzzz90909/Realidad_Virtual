@@ -4,50 +4,50 @@
   </head>
   <body>
     <a-scene background="color: #ECECEC">
+      
+      <a-entity camera position="0 1.5 3" look-controls></a-entity>
+      <a-entity light="type: directional; intensity: 1" position="3 5 3"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.6"></a-entity>
 
-      <!-- Cámara con movimiento (WASD + mouse) -->
-      <a-entity id="player"
-                position="0 1.6 6"
-                camera
-                look-controls
-                wasd-controls>
-      </a-entity>
+      <a-plane rotation="-90 0 0" width="10" height="10" color="#666"></a-plane>
 
-      <!-- Luces -->
-      <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
-
-      <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="20" height="20" color="#CCC"></a-plane>
-
-      <!-- Brazo robótico -->
+      <!-- EL HP* BRAZO TRABAJANDO DURO -->
       <a-entity id="robot" 
                 gltf-model="GP12_AR1440.glb" 
-                scale="0.2 0.2 0.2"
-                position="0 0 0"
-                rotation="0 0 0"
-                animation__1="property: rotation; to: 0 45 0; dur: 1500; startEvents: start"
-                animation__2="property: position; to: 0 -0.3 0; dur: 1500; startEvents: step1"
-                animation__3="property: position; to: 0 0 0; dur: 1500; startEvents: step2"
-                animation__4="property: rotation; to: 0 -45 0; dur: 2000; startEvents: step3"
-                animation__5="property: position; to: 0 -0.3 0; dur: 1500; startEvents: step4"
-                animation__6="property: rotation; to: 0 0 0; dur: 2000; startEvents: step5">
+                scale="0.3 0.3 0.3" 
+                position="0 0 0">
+                
+        <!-- Movimiento base rápido -->
+        <a-animation attribute="rotation"
+                    dur="2000"
+                    from="0 -45 0"
+                    to="0 45 0"
+                    repeat="indefinite"
+                    direction="alternate"
+                    easing="ease-in-out">
+        </a-animation>
+
+        <!-- Movimiento del brazo arriba/abajo -->
+        <a-animation attribute="position"
+                    dur="1500"
+                    from="0 0 0"
+                    to="0 0.4 0"
+                    repeat="indefinite"
+                    direction="alternate"
+                    easing="ease-in-out">
+        </a-animation>
+
+        <!-- Inclinación extra -->
+        <a-animation attribute="rotation"
+                    dur="1800"
+                    from="0 0 0"
+                    to="15 0 0"
+                    repeat="indefinite"
+                    direction="alternate"
+                    easing="ease-in-out">
+        </a-animation>
+
       </a-entity>
-
-      <!-- Script para secuencia -->
-      <script>
-        const robot = document.querySelector("#robot");
-
-        robot.addEventListener("model-loaded", () => {
-          robot.emit("start");
-        });
-
-        robot.addEventListener("animationcomplete__1", () => robot.emit("step1"));
-        robot.addEventListener("animationcomplete__2", () => robot.emit("step2"));
-        robot.addEventListener("animationcomplete__3", () => robot.emit("step3"));
-        robot.addEventListener("animationcomplete__4", () => robot.emit("step4"));
-        robot.addEventListener("animationcomplete__5", () => robot.emit("step5"));
-      </script>
 
     </a-scene>
   </body>
