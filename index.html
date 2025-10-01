@@ -5,20 +5,25 @@
   <body>
     <a-scene background="color: #ECECEC">
 
-      <!-- Cámara -->
-      <a-entity position="0 2 6" camera look-controls></a-entity>
+      <!-- Cámara con movimiento (WASD + mouse) -->
+      <a-entity id="player"
+                position="0 1.6 6"
+                camera
+                look-controls
+                wasd-controls>
+      </a-entity>
 
       <!-- Luces -->
       <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
       <a-entity light="type: ambient; intensity: 0.5"></a-entity>
 
       <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="10" height="10" color="#CCC"></a-plane>
+      <a-plane rotation="-90 0 0" width="20" height="20" color="#CCC"></a-plane>
 
       <!-- Brazo robótico -->
       <a-entity id="robot" 
                 gltf-model="GP12_AR1440.glb" 
-                scale="0.2 0.2 0.2"   <!-- si no aparece, prueba 0.02 o 2 -->
+                scale="0.2 0.2 0.2"
                 position="0 0 0"
                 rotation="0 0 0"
                 animation__1="property: rotation; to: 0 45 0; dur: 1500; startEvents: start"
@@ -29,15 +34,14 @@
                 animation__6="property: rotation; to: 0 0 0; dur: 2000; startEvents: step5">
       </a-entity>
 
+      <!-- Script para secuencia -->
       <script>
         const robot = document.querySelector("#robot");
 
-        // Inicia la secuencia
         robot.addEventListener("model-loaded", () => {
           robot.emit("start");
         });
 
-        // Encadena animaciones
         robot.addEventListener("animationcomplete__1", () => robot.emit("step1"));
         robot.addEventListener("animationcomplete__2", () => robot.emit("step2"));
         robot.addEventListener("animationcomplete__3", () => robot.emit("step3"));
