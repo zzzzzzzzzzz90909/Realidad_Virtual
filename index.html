@@ -5,94 +5,74 @@
   <body>
     <a-scene background="color: #ECECEC">
       
-      <!-- Cámara con rig de movimiento -->
-      <a-entity id="rig" movement-controls position="0 1.6 8">
-        <a-entity camera look-controls></a-entity>
-      </a-entity>
+      <!-- Cámara fija para ver mejor el brazo -->
+      <a-entity camera position="0 1.5 3" look-controls></a-entity>
 
       <!-- Luces -->
-      <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
+      <a-entity light="type: directional; intensity: 1" position="3 5 3"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.6"></a-entity>
 
-      <!-- Piso de planta industrial -->
-      <a-plane rotation="-90 0 0" width="20" height="20" color="#888"></a-plane>
+      <!-- Piso simple -->
+      <a-plane rotation="-90 0 0" width="10" height="10" color="#666"></a-plane>
 
-      <!-- Paredes -->
-      <a-box position="0 2 -10" depth="0.5" height="4" width="20" color="#555"></a-box>
-      <a-box position="-10 2 0" depth="20" height="4" width="0.5" color="#555"></a-box>
-      <a-box position="10 2 0" depth="20" height="4" width="0.5" color="#555"></a-box>
+      <!-- BRAZO ROBÓTICO CON MOVIMIENTOS DE PRUEBA -->
+      <a-entity id="robot" 
+                gltf-model="GP12_AR1440.glb" 
+                scale="0.3 0.3 0.3" 
+                position="0 0 0"
+                rotation="0 0 0">
 
-      <!-- Mesa de trabajo -->
-      <a-box position="0 0.75 -2" depth="2" height="1.5" width="2" color="#333"></a-box>
-
-      <!-- Banda transportadora -->
-      <a-box position="4 0.5 0" depth="6" height="1" width="2" color="#444"></a-box>
-
-      <!-- Caja -->
-      <a-box id="caja" color="red" depth="0.5" height="0.5" width="0.5" 
-             position="0 1.5 -2"
-             animation__pickup="property: position; to: 0 2 -1; dur: 2000; startEvents: recoger"
-             animation__mover="property: position; to: 4 1 0; dur: 3000; delay: 2000; startEvents: mover">
-      </a-box>
-
-      <!-- Robot con animaciones de brazo -->
-      <a-entity id="robot" gltf-model="GP12_AR1440.glb" scale="0.4 0.4 0.4" position="-1 0 -1">
-        
-        <!-- Base girando -->
+        <!-- MOVIMIENTO 1: Rotación base (eje Y) -->
         <a-animation attribute="rotation"
-                    dur="4000"
+                    dur="3000"
                     from="0 0 0"
-                    to="0 45 0"
-                    startEvents="recoger"
+                    to="0 60 0"
                     direction="alternate"
-                    repeat="1">
+                    repeat="indefinite"
+                    easing="ease-in-out">
         </a-animation>
 
-        <!-- Brazo moviéndose hacia arriba/abajo -->
-        <a-animation attribute="position"
-                    dur="2000"
-                    from="-1 0 -1"
-                    to="-1 0.3 -1"
-                    startEvents="recoger"
-                    direction="alternate"
-                    repeat="1">
-        </a-animation>
-
-        <!-- Inclinación del brazo -->
+        <!-- MOVIMIENTO 2: Inclinación hombro (eje X) -->
         <a-animation attribute="rotation"
-                    dur="1500"
+                    dur="2000"
                     from="0 0 0"
                     to="30 0 0"
-                    startEvents="recoger"
-                    delay="1000"
                     direction="alternate"
-                    repeat="1">
+                    repeat="indefinite"
+                    delay="1000"
+                    easing="ease-in-out">
+        </a-animation>
+
+        <!-- MOVIMIENTO 3: Movimiento vertical (eje Y) -->
+        <a-animation attribute="position"
+                    dur="2500"
+                    from="0 0 0"
+                    to="0 0.2 0"
+                    direction="alternate"
+                    repeat="indefinite"
+                    delay="500"
+                    easing="ease-in-out">
         </a-animation>
 
       </a-entity>
 
-      <!-- Secuencia automática -->
-      <a-entity id="control" 
-        animation__trigger1="property: visible; to: true; dur: 10; startEvents: start; on: start"
-        event-set__1="_event: animationcomplete__trigger1; _target: #caja; recoger: ;"
-        event-set__2="_event: animationcomplete__trigger1; _target: #robot; recoger: ;"
-        event-set__3="_event: animationcomplete__pickup; _target: #caja; mover: ;"
-        event-set__4="_event: animationcomplete__pickup; _target: #robot; mover: ;">
-      </a-entity>
-
-      <!-- Botón para iniciar secuencia -->
-      <a-box color="green" position="2 1 2" depth="0.2" height="0.3" width="0.3"
-             event-set__start="_event: click; _target: #control; start:">
-        <a-text value="INICIAR" align="center" position="0 0 0.11" color="white"></a-text>
+      <!-- Caja de prueba para que el brazo interactúe -->
+      <a-box id="caja-test" 
+             color="red" 
+             depth="0.3" 
+             height="0.3" 
+             width="0.3" 
+             position="1 0.2 0"
+             animation="property: position; to: -1 0.2 0; dur: 4000; direction: alternate; repeat: indefinite">
       </a-box>
 
-    </a-scene>
+      <!-- Instrucciones -->
+      <a-text value="ENFOQUE EN MOVIMIENTO DEL BRAZO" 
+              position="-1.5 2.5 -2" 
+              color="black" 
+              align="center">
+      </a-text>
 
-    <script>
-      // Iniciar automáticamente después de 2 segundos
-      setTimeout(() => {
-        document.querySelector('#control').emit('start');
-      }, 2000);
-    </script>
+    </a-scene>
   </body>
 </html>
