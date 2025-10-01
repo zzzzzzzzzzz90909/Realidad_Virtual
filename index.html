@@ -6,26 +6,44 @@
     <a-scene background="color: #ECECEC">
       
       <!-- Cámara -->
-      <a-entity position="0 1.6 4" camera look-controls></a-entity>
+      <a-entity position="0 2 6" camera look-controls></a-entity>
 
-      <!-- Luz -->
-      <a-entity light="type: directional; intensity: 1" position="2 4 5"></a-entity>
+      <!-- Luces -->
+      <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
       <a-entity light="type: ambient; intensity: 0.5"></a-entity>
 
       <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="10" height="10" color="#CCC"></a-plane>
+      <a-plane rotation="-90 0 0" width="12" height="12" color="#AAA"></a-plane>
 
-      <!-- Brazo robótico -->
-      <a-entity id="robot" gltf-model="GP12_AR1440.glb" 
+      <!-- Caja para recoger -->
+      <a-box id="caja" color="red" position="0 0.5 -1" depth="0.5" height="0.5" width="0.5"></a-box>
+
+      <!-- Brazo robótico (GP12_AR1440) -->
+      <a-entity id="robot" gltf-model="GP12_AR1440.glb"
                 scale="0.5 0.5 0.5"
-                position="0 0 0"
-                animation="property: rotation; 
-                           to: 0 360 0; 
-                           loop: true; 
-                           dur: 8000; 
-                           easing: linear">
+                position="0 0 0">
+
+        <!-- Simulación de movimiento del brazo -->
+        <a-animation 
+            attribute="rotation" 
+            to="0 30 0" 
+            dur="2000" 
+            direction="alternate"
+            repeat="indefinite">
+        </a-animation>
+
       </a-entity>
 
-    </a-scene>
-  </body>
-</html>
+      <!-- Animación de la caja (como si la levantara) -->
+      <a-animation 
+          attribute="position"
+          begin="pickup"
+          dur="3000"
+          from="0 0.5 -1"
+          to="0 2 -1"
+          fill="forwards"
+          easing="ease-in-out"
+          repeat="indefinite"
+          direction="alternate"
+          startEvents="pickup">
+      </a-anim
