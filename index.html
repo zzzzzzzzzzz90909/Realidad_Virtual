@@ -12,9 +12,8 @@
       init: function () {
         this.sceneEl = this.el;
         this.robot = null;
-        this.joints = {};
+        this.joints = {}; // Usamos un objeto para guardar las articulaciones por NOMBRE
         this.placedBoxCount = 0;
-        this.isAnimating = false;
         
         this.pickupPosition = new THREE.Vector3(-1.8, 0.9, 0);
         this.conveyorStartPosition = new THREE.Vector3(-1.8, 0.9, 1.4);
@@ -23,7 +22,7 @@
             new THREE.Vector3(1.5, 0.62, -1.2), new THREE.Vector3(2.1, 0.62, -1.2),
         ];
 
-        // Nombres de las articulaciones del Yaskawa AR1440
+        // --- NOMBRES ACTUALIZADOS PARA EL ROBOT YASKAWA AR1440 ---
         this.jointNames = [
           'GP12_BASE_AXIS_GP12_AR1440_Standard.STEP-1',
           'GP12_S_AXIS_GP12_AR1440.STEP-1',
@@ -35,146 +34,34 @@
 
         const robotEntity = document.querySelector('#robot');
         robotEntity.addEventListener('model-loaded', this.onModelLoaded.bind(this));
-        
-        // Agregar controles UI
-        this.createControls();
-      },
-
-      createControls: function() {
-        const controls = document.createElement('div');
-        controls.innerHTML = `
-          <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 8px; z-index: 1000;">
-            <h3 style="margin: 0 0 10px 0;">Control Brazo Yaskawa</h3>
-            <button id="startBtn" style="padding: 8px 15px; margin: 5px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
-              Iniciar Proceso
-            </button>
-            <button id="stopBtn" style="padding: 8px 15px; margin: 5px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
-              Detener
-            </button>
-            <button id="resetBtn" style="padding: 8px 15px; margin: 5px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">
-              Reiniciar
-            </button>
-            <div style="margin-top: 10px;">
-              <label style="display: block; margin: 5px 0;">
-                <input type="checkbox" id="debugMode"> Mostrar ejes
-              </label>
-            </div>
-            <div id="status" style="margin-top: 10px; font-size: 12px;">
-              Estado: Esperando...
-            </div>
-          </div>
-        `;
-        document.body.appendChild(controls);
-
-        document.getElementById('startBtn').addEventListener('click', () => {
-          if (!this.isAnimating) {
-            this.startProcess();
-          }
-        });
-
-        document.getElementById('stopBtn').addEventListener('click', () => {
-          this.stopProcess();
-        });
-
-        document.getElementById('resetBtn').addEventListener('click', () => {
-          this.resetProcess();
-        });
-
-        document.getElementById('debugMode').addEventListener('change', (e) => {
-          this.toggleDebugMode(e.target.checked);
-        });
-      },
-
-      toggleDebugMode: function(enable) {
-        if (this.robot) {
-          this.robot.traverse(node => {
-            if (node.isMesh) {
-              // Mostrar/ocultar ejes locales
-              if (enable && !node.userData.axisHelper) {
-                const axesHelper = new THREE.AxesHelper(0.5);
-                node.add(axesHelper);
-                node.userData.axisHelper = axesHelper;
-              } else if (!enable && node.userData.axisHelper) {
-                node.remove(node.userData.axisHelper);
-                node.userData.axisHelper = null;
-              }
-            }
-          });
-        }
-      },
-
-      updateStatus: function(message) {
-        const statusEl = document.getElementById('status');
-        if (statusEl) statusEl.textContent = 'Estado: ' + message;
       },
 
       onModelLoaded: function (e) {
         this.robot = e.detail.model;
-        console.log("Modelo del robot cargado. Identificando articulaciones...");
+        console.log("Modelo del robot cargado. Identificando articulaciones por nombre...");
 
-        // CORRECCIÓN: Ajustar la posición del robot para que esté en el piso
-        this.robot.position.y = 0;
-
-        // Buscar las articulaciones por nombre
         this.robot.traverse(node => {
           if (this.jointNames.includes(node.name)) {
             this.joints[node.name] = node;
-            console.log(`✓ Articulación encontrada: ${node.name}`);
-            
-            // Guardar la rotación inicial para referencia
-            node.userData.initialRotation = node.rotation.clone();
-            node.userData.initialPosition = node.position.clone();
-            
-            console.log(`  Posición:`, node.position);
-            console.log(`  Rotación:`, node.rotation);
+            console.log(`- Articulación encontrada y guardada: ${node.name}`);
           }
         });
 
         if (Object.keys(this.joints).length < this.jointNames.length) {
-          console.warn("No se encontraron todas las articulaciones. Encontradas:", Object.keys(this.joints));
-        } else {
-          console.log("✓ Todas las articulaciones identificadas correctamente");
+          console.error("¡ALERTA! No se encontraron todas las articulaciones por su nombre.");
+          return;
         }
         
-        this.updateStatus("Robot listo - Click 'Iniciar Proceso'");
+        console.log("Iniciando proceso industrial...");
+        this.startProcess();
       },
-
+      
       startProcess: function() {
-        if (this.isAnimating) return;
-        
         if (this.placedBoxCount >= this.palletPositions.length) {
-            this.updateStatus("Proceso completado - Palé lleno");
+            console.log("Proceso completado. El palé está lleno.");
             return;
         }
-        
-        this.isAnimating = true;
-        this.updateStatus("Iniciando proceso...");
         this.spawnAndMoveBoxOnConveyor();
-      },
-
-      stopProcess: function() {
-        TWEEN.removeAll();
-        this.isAnimating = false;
-        this.updateStatus("Proceso detenido");
-      },
-
-      resetProcess: function() {
-        this.stopProcess();
-        this.placedBoxCount = 0;
-        
-        // Remover todas las cajas existentes
-        const boxes = document.querySelectorAll('[data-box]');
-        boxes.forEach(box => box.remove());
-        
-        // Resetear posiciones del robot - CORREGIDO
-        Object.values(this.joints).forEach(joint => {
-          if (joint.userData.initialRotation) {
-            // Usar rotación relativa en lugar de absoluta
-            joint.rotation.set(0, 0, 0);
-          }
-        });
-        
-        this.updateStatus("Sistema reiniciado");
       },
 
       spawnAndMoveBoxOnConveyor: function() {
@@ -185,10 +72,7 @@
         boxEl.setAttribute('depth', 0.4);
         boxEl.setAttribute('position', this.conveyorStartPosition);
         boxEl.setAttribute('shadow', 'cast: true');
-        boxEl.setAttribute('data-box', 'true');
         this.sceneEl.appendChild(boxEl);
-
-        this.updateStatus("Moviendo caja en cinta transportadora...");
 
         new TWEEN.Tween(boxEl.object3D.position)
           .to(this.pickupPosition, 3000)
@@ -200,8 +84,7 @@
       },
 
       pickupAndPlaceBox: function(currentBox) {
-        if (!this.isAnimating) return;
-
+        // Asignamos las articulaciones a variables más cortas para legibilidad
         const base   = this.joints['GP12_BASE_AXIS_GP12_AR1440_Standard.STEP-1'];
         const s_axis = this.joints['GP12_S_AXIS_GP12_AR1440.STEP-1'];
         const l_axis = this.joints['GP12_L_AXIS_GP12_AR1440_Standard.STEP-1'];
@@ -209,165 +92,57 @@
         const r_axis = this.joints['GP12_R_AXIS_GP12_AR1440_Standard.STEP-1'];
         const gripper = this.joints['GP12_B_AXIS_GP12_AR1440_Standard.STEP-1'];
 
-        this.updateStatus("Robot moviéndose a posición de recogida...");
+        // Secuencia de animación
+        const moveToPickup = this.createTween(s_axis, { y: -90 })
+            .chain(this.createTween(l_axis, { z: -35 }))
+            .chain(this.createTween(u_axis, { z: 50 }))
+            .chain(this.createTween(r_axis, { y: -90 }));
 
-        // SECUENCIA CORREGIDA - MOVIMIENTOS MÁS SUAVES Y COHERENTES
-        
-        // 1. Moverse hacia la caja (solo rotación de base y hombro)
-        const moveToPickup = this.createTweenSequence([
-          { joint: base, rotation: { y: -30 }, duration: 1500 },
-          { joint: s_axis, rotation: { x: -20 }, duration: 1200 }
-        ]);
-
-        // 2. Extender brazo hacia la caja
-        const reachForBox = this.createTweenSequence([
-          { joint: l_axis, rotation: { z: -25 }, duration: 1000 },
-          { joint: u_axis, rotation: { z: 15 }, duration: 800 }
-        ]);
-
-        // 3. Agarrar la caja (movimiento pequeño)
-        const grabBox = this.createTween(l_axis, { z: -15 }, 600);
-
-        // 4. Levantar la caja
-        const liftBox = this.createTween(u_axis, { z: 25 }, 800);
-
-        // 5. Rotar hacia el palé
-        const rotateToPallet = this.createTweenSequence([
-          { joint: base, rotation: { y: 40 }, duration: 1800 },
-          { joint: s_axis, rotation: { x: 15 }, duration: 1200 }
-        ]);
-
-        // 6. Posicionar sobre el palé
-        const positionOverPallet = this.createTweenSequence([
-          { joint: l_axis, rotation: { z: -20 }, duration: 800 },
-          { joint: u_axis, rotation: { z: 10 }, duration: 600 }
-        ]);
-
-        // 7. Soltar la caja
-        const releaseBox = this.createTween(l_axis, { z: -25 }, 500);
-
-        // 8. Retirar brazo
-        const retractArm = this.createTween(u_axis, { z: 20 }, 600);
-
-        // 9. Volver a posición inicial
-        const returnHome = this.createTweenSequence([
-          { joint: base, rotation: { y: 0 }, duration: 1500 },
-          { joint: s_axis, rotation: { x: 0 }, duration: 1200 },
-          { joint: u_axis, rotation: { z: 0 }, duration: 1000 },
-          { joint: l_axis, rotation: { z: 0 }, duration: 1000 }
-        ]);
-
-        // Encadenar todas las secuencias
-        moveToPickup.chain(reachForBox);
-        reachForBox.chain(grabBox);
-        grabBox.chain(liftBox);
-        liftBox.chain(rotateToPallet);
-        rotateToPallet.chain(positionOverPallet);
-        positionOverPallet.chain(releaseBox);
-        releaseBox.chain(retractArm);
-        retractArm.chain(returnHome);
-
-        // Eventos para agarrar y soltar la caja
-        grabBox.onStart(() => {
-          this.updateStatus("Robot agarrando caja...");
-          if (gripper && currentBox.object3D) {
-            // CORRECCIÓN: Usar el sistema de coordenadas correcto
-            const worldPos = new THREE.Vector3();
-            currentBox.object3D.getWorldPosition(worldPos);
+        const grab = this.createTween(l_axis, { z: -20 })
+            .chain(this.createTween(u_axis, { z: 35 }));
             
-            // Hacer que la caja sea hija del gripper
-            gripper.attach(currentBox.object3D);
-            
-            // Ajustar posición local para que esté en la pinza
-            currentBox.object3D.position.set(0, 0, 0);
-          }
-        });
+        const moveToPallet = this.createTween(s_axis, { y: 90 }, 2000)
+            .chain(this.createTween(l_axis, { z: -35 }))
+            .chain(this.createTween(u_axis, { z: 50 }));
 
-        releaseBox.onStart(() => {
-          this.updateStatus("Robot soltando caja en palé...");
-          if (currentBox.object3D) {
-            // CORRECCIÓN: Calcular posición mundial correcta
-            const worldPos = new THREE.Vector3();
-            currentBox.object3D.getWorldPosition(worldPos);
+        const release = this.createTween(l_axis, { z: -20 })
+            .chain(this.createTween(u_axis, { z: 35 }));
             
-            // Volver a la escena
+        const returnHome = this.createTween(s_axis, { y: 0 }, 1500)
+            .chain(this.createTween(l_axis, { z: 0 }))
+            .chain(this.createTween(u_axis, { z: 0 }))
+            .chain(this.createTween(r_axis, { y: 0 }));
+
+        // Encadenar secuencias y acciones
+        moveToPickup.chain(grab);
+        grab.chain(moveToPallet);
+        moveToPallet.chain(release);
+        release.chain(returnHome);
+
+        grab.onStart(() => gripper.attach(currentBox.object3D));
+        release.onStart(() => {
             this.sceneEl.object3D.attach(currentBox.object3D);
-            
-            // Posicionar en el palé
             currentBox.object3D.position.copy(this.palletPositions[this.placedBoxCount]);
-          }
         });
-
         returnHome.onComplete(() => {
-          this.updateStatus("Caja colocada - Volviendo a posición inicial");
-          this.placedBoxCount++;
-          this.isAnimating = false;
-          
-          // Esperar un momento y continuar con la siguiente caja
-          setTimeout(() => {
-            if (this.placedBoxCount < this.palletPositions.length) {
-              this.startProcess();
-            } else {
-              this.updateStatus("✓ Proceso completado - Todas las cajas colocadas");
-            }
-          }, 1000);
+            this.placedBoxCount++;
+            this.startProcess();
         });
-
-        // Iniciar la secuencia
+        
         moveToPickup.start();
       },
 
-      createTweenSequence: function(jointRotations) {
-        let currentTween = null;
-        
-        jointRotations.forEach((rotationConfig, index) => {
-          const tween = this.createTween(
-            rotationConfig.joint, 
-            rotationConfig.rotation, 
-            rotationConfig.duration
-          );
-          
-          if (currentTween) {
-            currentTween.chain(tween);
-          } else {
-            currentTween = tween;
-          }
-        });
-        
-        return currentTween;
-      },
-
-      createTween: function (joint, targetRotation, duration = 1200) {
-        // CORRECCIÓN: Usar rotación relativa en lugar de absoluta
-        const currentRot = {
-          x: joint.rotation.x,
-          y: joint.rotation.y, 
-          z: joint.rotation.z
+      createTween: function (joint, to, duration = 1200) {
+        const from = { x: joint.rotation.x, y: joint.rotation.y, z: joint.rotation.z };
+        const toRad = {
+          x: THREE.MathUtils.degToRad(to.x ?? THREE.MathUtils.radToDeg(from.x)),
+          y: THREE.MathUtils.degToRad(to.y ?? THREE.MathUtils.radToDeg(from.y)),
+          z: THREE.MathUtils.degToRad(to.z ?? THREE.MathUtils.radToDeg(from.z)),
         };
-
-        // Convertir ángulos a radianes - CORREGIDO
-        const targetRad = {
-          x: currentRot.x + (targetRotation.x !== undefined ? THREE.MathUtils.degToRad(targetRotation.x) : 0),
-          y: currentRot.y + (targetRotation.y !== undefined ? THREE.MathUtils.degToRad(targetRotation.y) : 0),
-          z: currentRot.z + (targetRotation.z !== undefined ? THREE.MathUtils.degToRad(targetRotation.z) : 0)
-        };
-
-        // Crear el tween - CORREGIDO
-        const tween = new TWEEN.Tween(currentRot)
-          .to(targetRad, duration)
-          .easing(TWEEN.Easing.Quadratic.InOut)
-          .onUpdate(() => {
-            // Aplicar rotación de manera incremental
-            joint.rotation.set(currentRot.x, currentRot.y, currentRot.z);
-            
-            // Forzar actualización
-            joint.updateMatrixWorld(true);
-          })
-          .onStart(() => {
-            console.log(`Moviendo ${joint.name} a:`, targetRotation);
-          });
-          
-        return tween;
+        return new TWEEN.Tween(from)
+          .to(toRad, duration)
+          .onUpdate(() => { joint.rotation.set(from.x, from.y, from.z); })
+          .easing(TWEEN.Easing.Quadratic.InOut);
       },
       
       tick: function (time) {
@@ -377,7 +152,7 @@
   </script>
 </head>
 <body>
-  <a-scene background="color: #87CEEB" robot-controller renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true">
+  <a-scene background="color: #454545" robot-controller renderer="colorManagement: true; physicallyCorrectLights: true">
     <a-assets>
       <a-asset-item id="robot-arm" src="./GP12_AR1440.glb"></a-asset-item>
       
@@ -387,17 +162,14 @@
       <img id="wood-pallet" src="https://cdn.glitch.global/c67f1742-8280-4962-a78b-d547370c4a4a/Planks032_1K_Color.jpg?v=1680526462589">
     </a-assets>
     
-    <!-- Mejorar iluminación -->
-    <a-entity light="type: ambient; color: #FFF; intensity: 0.6"></a-entity>
-    <a-entity light="type: directional; color: #FFF; intensity: 0.8" position="5 10 5" castShadow="true"></a-entity>
-    <a-entity light="type: spot; angle: 60; penumbra: 0.5; intensity: 1.5; castShadow: true;" position="0 8 0" target="#robot"></a-entity>
+    <a-entity light="type: ambient; color: #AAA; intensity: 1"></a-entity>
+    <a-entity light="type: directional; color: #FFF; intensity: 0.8" position="-2 5 2"></a-entity>
+    <a-entity light="type: spot; angle: 50; penumbra: 0.5; intensity: 2.5; castShadow: true;" position="0 4 0"></a-entity>
     
-    <!-- Mejorar escena -->
-    <a-plane material="src: #concrete-floor; repeat: 8 8" position="0 0 0" rotation="-90 0 0" width="20" height="20" shadow="receive: true"></a-plane>
-    <a-plane material="src: #metal-wall; repeat: 4 2; color: #D0D0D0" width="20" height="8" position="0 4 -10"></a-plane>
+    <a-plane material="src: #concrete-floor; repeat: 5 5; color: #E0E0E0" position="0 0 0" rotation="-90 0 0" width="10" height="10" shadow="receive: true"></a-plane>
+    <a-plane material="src: #metal-wall; repeat: 4 2; color: #D0D0D0" width="10" height="5" position="0 2.5 -5"></a-plane>
     
-    <!-- CORRECCIÓN: Ajustar posición Y del robot para que esté en el piso -->
-    <a-entity id="robot" gltf-model="#robot-arm" position="0 0.05 0" scale="1 1 1" shadow="cast: true"></a-entity>
+    <a-entity id="robot" gltf-model="#robot-arm" position="0 0 0" shadow="cast: true"></a-entity>
     
     <a-entity id="conveyor-belt" position="-1.8 0.4 0" rotation="0 90 0">
       <a-box color="#333" depth="3" height="0.6" width="0.8"></a-box>
