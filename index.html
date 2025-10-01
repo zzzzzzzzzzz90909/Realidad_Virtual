@@ -1,59 +1,112 @@
+<!DOCTYPE html>
 <html>
-  <head>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  </head>
-  <body>
-    <a-scene background="color: #ECECEC">
-      
-      <!-- Cámara con WASD -->
-      <a-entity id="rig" movement-controls position="0 1.6 8">
-        <a-entity camera look-controls></a-entity>
-      </a-entity>
+<head>
+  <title>Proceso Industrial Automático</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></a-frame>
+</head>
+<body>
+  <a-scene>
+    
+    <a-assets>
+      <a-asset-item id="robot-model" src="./GP12_AR1440.glb"></a-asset-item>
+    </a-assets>
 
-      <!-- Luces -->
-      <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
-      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
+    <!-- Sistema de producción coordinado -->
+    
+    <!-- 1. Brazo robótico principal -->
+    <a-entity gltf-model="#robot-model" position="0 0 0">
+      <!-- Animación cíclica del brazo -->
+      <a-animation attribute="rotation"
+                  dur="6000"
+                  from="0 0 0"
+                  to="0 90 0"
+                  repeat="indefinite"
+                  direction="alternate"
+                  easing="ease-in-out">
+      </a-animation>
+    </a-entity>
 
-      <!-- Piso de planta industrial -->
-      <a-plane rotation="-90 0 0" width="20" height="20" color="#888"></a-plane>
-
-      <!-- Paredes -->
-      <a-box position="0 2 -10" depth="0.5" height="4" width="20" color="#555"></a-box>
-      <a-box position="-10 2 0" depth="20" height="4" width="0.5" color="#555"></a-box>
-      <a-box position="10 2 0" depth="20" height="4" width="0.5" color="#555"></a-box>
-
-      <!-- Mesa de trabajo -->
-      <a-box position="0 0.75 -2" depth="2" height="1.5" width="2" color="#333"></a-box>
-
-      <!-- Banda transportadora -->
-      <a-box position="4 0.5 0" depth="6" height="1" width="2" color="#444"></a-box>
-
-      <!-- Caja -->
-      <a-box id="caja" color="red" depth="0.5" height="0.5" width="0.5" 
-             position="0 1.5 -2"
-             animation__pickup="property: position; to: 0 2 -1; dur: 2000; startEvents: recoger"
-             animation__mover="property: position; to: 4 1 0; dur: 3000; delay: 2000; startEvents: mover">
+    <!-- 2. Cinta transportadora de entrada -->
+    <a-entity position="-3 0.5 0">
+      <a-box color="#333" width="0.5" height="0.1" depth="3">
+        <a-animation attribute="rotation"
+                    dur="3000"
+                    to="0 0 360"
+                    repeat="indefinite"
+                    easing="linear">
+        </a-animation>
       </a-box>
+    </a-entity>
 
-      <!-- Robot -->
-      <a-entity id="robot"
-                gltf-model="GP12_AR1440.glb"
-                scale="0.4 0.4 0.4"
-                position="-1 0 -1"
-                rotation="0 0 0"
-                animation__bajar="property: rotation; to: 0 20 0; dur: 2000; startEvents: recoger"
-                animation__subir="property: rotation; to: 0 -30 0; dur: 2000; delay: 2000; startEvents: mover">
-      </a-entity>
+    <!-- 3. Estación de procesamiento -->
+    <a-entity position="0 0.5 2">
+      <a-cylinder color="#0066cc" radius="0.3" height="0.8">
+        <a-animation attribute="scale"
+                    dur="2000"
+                    from="1 1 1"
+                    to="1 1.2 1"
+                    repeat="indefinite"
+                    direction="alternate"
+                    easing="ease-in-out">
+        </a-animation>
+      </a-cylinder>
+    </a-entity>
 
-      <!-- Secuencia automática -->
-      <a-entity id="control" 
-                animation__trigger1="property: visible; to: true; dur: 10; startEvents: start; on: start"
-                event-set__1="_event: animationcomplete__trigger1; _target: #caja; recoger: ;"
-                event-set__2="_event: animationcomplete__trigger1; _target: #robot; recoger: ;"
-                event-set__3="_event: animationcomplete__bajar; _target: #caja; mover: ;"
-                event-set__4="_event: animationcomplete__bajar; _target: #robot; mover: ;">
-      </a-entity>
+    <!-- 4. Cinta de salida -->
+    <a-entity position="3 0.5 0">
+      <a-box color="#666" width="0.5" height="0.1" depth="3">
+        <a-animation attribute="rotation"
+                    dur="2000"
+                    to="0 0 -360"
+                    repeat="indefinite"
+                    easing="linear">
+        </a-animation>
+      </a-box>
+    </a-entity>
 
-    </a-scene>
-  </body>
+    <!-- 5. Producto moviéndose por el proceso -->
+    <a-box color="red" width="0.3" height="0.3" depth="0.3" position="-3 0.8 0">
+      <!-- Ruta completa del producto -->
+      <a-animation attribute="position"
+                  dur="12000"
+                  from="-3 0.8 0"
+                  to="3 0.8 0"
+                  repeat="indefinite"
+                  easing="ease-in-out">
+      </a-animation>
+      <a-animation attribute="position"
+                  dur="4000"
+                  begin="2000"
+                  from="-3 0.8 0"
+                  to="0 0.8 2"
+                  repeat="indefinite"
+                  easing="ease-in-out">
+      </a-animation>
+      <a-animation attribute="position"
+                  dur="4000"
+                  begin="6000"
+                  from="0 0.8 2"
+                  to="3 0.8 0"
+                  repeat="indefinite"
+                  easing="ease-in-out">
+      </a-animation>
+    </a-box>
+
+    <!-- Luces indicadoras -->
+    <a-entity position="-2 2 0">
+      <a-light type="point" color="green" intensity="2" distance="3">
+        <a-animation attribute="intensity"
+                    dur="1000"
+                    from="0.5"
+                    to="2"
+                    repeat="indefinite"
+                    direction="alternate">
+        </a-animation>
+      </a-light>
+    </a-entity>
+
+    <a-entity camera position="0 4 8" look-controls></a-entity>
+
+  </a-scene>
+</body>
 </html>
