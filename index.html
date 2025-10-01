@@ -5,8 +5,8 @@
   <body>
     <a-scene background="color: #ECECEC">
       
-      <!-- Rig de cámara con movimiento (WASD + mouse) -->
-      <a-entity id="rig" movement-controls position="0 1.6 6">
+      <!-- Cámara con WASD -->
+      <a-entity id="rig" movement-controls position="0 1.6 8">
         <a-entity camera look-controls></a-entity>
       </a-entity>
 
@@ -14,20 +14,44 @@
       <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
       <a-entity light="type: ambient; intensity: 0.5"></a-entity>
 
-      <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="12" height="12" color="#AAA"></a-plane>
+      <!-- Piso de planta industrial -->
+      <a-plane rotation="-90 0 0" width="20" height="20" color="#888"></a-plane>
 
-      <!-- Caja para recoger -->
-      <a-box id="caja" color="red" position="0 0.5 -1" depth="0.5" height="0.5" width="0.5"
-             animation="property: position; from: 0 0.5 -1; to: 0 2 -1; dur: 3000; dir: alternate; loop: true; easing: easeInOutSine">
+      <!-- Paredes -->
+      <a-box position="0 2 -10" depth="0.5" height="4" width="20" color="#555"></a-box>
+      <a-box position="-10 2 0" depth="20" height="4" width="0.5" color="#555"></a-box>
+      <a-box position="10 2 0" depth="20" height="4" width="0.5" color="#555"></a-box>
+
+      <!-- Mesa de trabajo -->
+      <a-box position="0 0.75 -2" depth="2" height="1.5" width="2" color="#333"></a-box>
+
+      <!-- Banda transportadora -->
+      <a-box position="4 0.5 0" depth="6" height="1" width="2" color="#444"></a-box>
+
+      <!-- Caja -->
+      <a-box id="caja" color="red" depth="0.5" height="0.5" width="0.5" 
+             position="0 1.5 -2"
+             animation__pickup="property: position; to: 0 2 -1; dur: 2000; startEvents: recoger"
+             animation__mover="property: position; to: 4 1 0; dur: 3000; delay: 2000; startEvents: mover">
       </a-box>
 
-      <!-- Brazo robótico -->
-      <a-entity id="robot" 
+      <!-- Robot -->
+      <a-entity id="robot"
                 gltf-model="GP12_AR1440.glb"
-                scale="0.5 0.5 0.5"
-                position="0 0 0"
-                animation="property: rotation; to: 0 30 0; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine">
+                scale="0.4 0.4 0.4"
+                position="-1 0 -1"
+                rotation="0 0 0"
+                animation__bajar="property: rotation; to: 0 20 0; dur: 2000; startEvents: recoger"
+                animation__subir="property: rotation; to: 0 -30 0; dur: 2000; delay: 2000; startEvents: mover">
+      </a-entity>
+
+      <!-- Secuencia automática -->
+      <a-entity id="control" 
+                animation__trigger1="property: visible; to: true; dur: 10; startEvents: start; on: start"
+                event-set__1="_event: animationcomplete__trigger1; _target: #caja; recoger: ;"
+                event-set__2="_event: animationcomplete__trigger1; _target: #robot; recoger: ;"
+                event-set__3="_event: animationcomplete__bajar; _target: #caja; mover: ;"
+                event-set__4="_event: animationcomplete__bajar; _target: #robot; mover: ;">
       </a-entity>
 
     </a-scene>
