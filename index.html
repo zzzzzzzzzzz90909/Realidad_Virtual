@@ -1,24 +1,124 @@
-<script>
-  // Este es un componente de diagnóstico para inspeccionar los nombres del modelo
-  AFRAME.registerComponent('robot-inspector', {
-    init: function () {
-      // Esperamos a que el modelo se cargue
-      this.el.addEventListener('model-loaded', () => {
-        const model = this.el.object3D;
+<html>
+<head>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.3/tween.umd.js"></script>
+</head>
+<body>
+  <a-scene background="color: #ECECEC">
 
-        console.log("--- LISTA DE NOMBRES DE PARTES DEL ROBOT ---");
+    <a-entity position="0 2 6" camera look-controls></a-entity>
 
-        // Recorremos cada pieza del modelo 3D
-        model.traverse(function (object) {
-          // Si la pieza tiene un nombre, lo imprimimos en la consola
-          if (object.name) {
-            console.log(object.name);
+    <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
+    <a-entity light="type: ambient; intensity: 0.5"></a-entity>
+
+    <a-plane rotation="-90 0 0" width="12" height="12" color="#AAA"></a-plane>
+
+    <a-entity id="robot" 
+              gltf-model="GP12_AR1440.glb" 
+              scale="0.5 0.5 0.5"
+              position="0 0 0"
+              rotation="0 0 0"
+              industrial-process>
+    </a-entity>
+
+  </a-scene>
+
+  <script>
+    AFRAME.registerComponent('industrial-process', {
+      init: function () {
+        this.el.addEventListener('model-loaded', () => {
+          const model = this.el.object3D;
+
+          // --- FUNCIÓN INTELIGENTE PARA ENCONTRAR LAS PARTES ---
+          // Esta función buscará en una lista de nombres posibles para cada articulación.
+          const findJoint = (model, possibleNames) => {
+            for (const name of possibleNames) {
+              const object = model.getObjectByName(name);
+              if (object) {
+                console.log(`ÉXITO: Articulación encontrada con el nombre: "${name}"`);
+                return object;
+              }
+            }
+            return null; // No se encontró con ninguno de los nombres
+          };
+
+          // --- LISTAS DE NOMBRES POSIBLES ---
+          // Aquí ponemos los nombres que me diste y algunas variaciones comunes.
+          const jointS = findJoint(model, ['GP12_S_AXIS_GP12_AR1440.STEP-1', 'GP12_S_AXIS_GP12_AR1440']);
+          const jointL = findJoint(model, ['GP12_L_AXIS_GP12_AR1440_Standard.STEP-1', 'GP12_L_AXIS_GP12_AR1440_Standard']);
+          const jointU = findJoint(model, ['GP12_U_AXIS_GP12_AR1440_Standard.STEP-1', 'GP12_U_AXIS_GP12_AR1440_Standard']);
+          const jointR = findJoint(model, ['GP12_R_AXIS_GP12_AR1440_Standard.STEP-1', 'GP12_R_AXIS_GP12_AR1440_Standard']);
+          const jointB = findJoint(model, ['GP12_B_AXIS_GP12_AR1440_Standard.STEP-1', 'GP12_B_AXIS_GP12_AR1440_Standard']);
+
+          // Verificamos si TODAS las articulaciones fueron encontradas
+          if (jointS && jointL && jointU && jointR && jointB) {
+            console.log("¡Todas las articulaciones del robot encontradas! Iniciando animación.");
+            this.startProcess(jointS, jointL, jointU, jointR, jointB);
+          } else {
+            // Si falta alguna, la consola te dirá cuál.
+            if (!jointS) console.error("ERROR: No se pudo encontrar la articulación del EJE S.");
+            if (!jointL) console.error("ERROR: No se pudo encontrar la articulación del EJE L.");
+            if (!jointU) console.error("ERROR: No se pudo encontrar la articulación del EJE U.");
+            if (!jointR) console.error("ERROR: No se pudo encontrar la articulación del EJE R.");
+            if (!jointB) console.error("ERROR: No se pudo encontrar la articulación del EJE B.");
           }
         });
+      },
 
-        console.log("--- FIN DE LA LISTA ---");
-        console.warn("Usa los nombres de esta lista en el script de animación final. Cópialos y pégalos para evitar errores.");
-      });
+      // --- CÓDIGO DE ANIMACIÓN (Este no ha cambiado) ---
+      startProcess: function (jointS, jointL, jointU, jointR, jointB) {
+        const duration = 1500;
+        const easing = TWEEN.Easing.Quadratic.InOut;
+        const toRad = (degrees) => degrees * (Math.PI / 180);
+
+        const goHome = {
+            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(0) }, duration).easing(easing),
+            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(0) }, duration).easing(easing),
+            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(0) }, duration).easing(easing),
+            r: new TWEEN.Tween(jointR.rotation).to({ y: toRad(0) }, duration).easing(easing),
+            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(0) }, duration).easing(easing),
+        };
+        const goToPick = {
+            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(90) }, duration).easing(easing),
+            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(45) }, duration).easing(easing),
+            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(60) }, duration).easing(easing),
+            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(90) }, duration).easing(easing),
+        };
+        const goToPlace = {
+            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(-90) }, duration * 2).easing(easing),
+            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(30) }, duration * 2).easing(easing),
+            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(75) }, duration * 2).easing(easing),
+            r: new TWEEN.Tween(jointR.rotation).to({ y: toRad(180) }, duration).easing(easing),
+            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(90) }, duration).easing(easing),
+        };
+
+        goToPick.s.chain(goHome.s);
+        goToPick.l.chain(goHome.l);
+        goToPick.u.chain(goHome.u);
+        goToPick.b.chain(goHome.b);
+        goHome.s.chain(goToPlace.s, goToPlace.r);
+        goHome.l.chain(goToPlace.l);
+        goHome.u.chain(goToPlace.u);
+        goHome.b.chain(goToPlace.b);
+        goToPlace.s.onComplete(() => {
+            setTimeout(() => { goHome.s.start(); goHome.l.start(); goHome.u.start(); goHome.r.start(); goHome.b.start(); }, 500);
+        });
+        goHome.r.onComplete(() => {
+             setTimeout(() => { goToPick.s.start(); goToPick.l.start(); goToPick.u.start(); goToPick.b.start(); }, 500);
+        });
+        
+        goToPick.s.start();
+        goToPick.l.start();
+        goToPick.u.start();
+        goToPick.b.start();
+      }
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      TWEEN.update();
     }
-  });
-</script>
+    animate();
+  </script>
+</body>
+</html>
