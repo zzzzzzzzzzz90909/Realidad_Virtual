@@ -3,7 +3,6 @@
 <head>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script>
-    // Componente 'track-target' para que el robot siga a la caja
     AFRAME.registerComponent('track-target', {
       schema: {
         target: {type: 'selector'},
@@ -34,39 +33,151 @@
         }
       }
     });
+
+    // Nuevo componente para una luz intermitente (beacon light)
+    AFRAME.registerComponent('blinking-light', {
+      schema: {
+        color: {type: 'color', default: '#FF0000'},
+        interval: {type: 'number', default: 500} // milliseconds
+      },
+      init: function() {
+        this.material = this.el.getObject3D('mesh').material;
+        this.originalColor = this.material.color.getHex();
+        this.blinkState = false;
+        this.lastBlink = 0;
+      },
+      tick: function(time, timeDelta) {
+        if (time - this.lastBlink > this.data.interval) {
+          this.blinkState = !this.blinkState;
+          this.material.emissive.set(this.blinkState ? this.data.color : this.originalColor);
+          this.lastBlink = time;
+        }
+      }
+    });
   </script>
 </head>
 <body>
-  <a-scene background="color: #2C3E50">
+  <a-scene background="color: #1A2633">
     
     <a-entity id="rig" position="0 0 10"><a-entity position="0 1.6 0" camera look-controls="pointerLockEnabled: true" wasd-controls="acceleration: 30"></a-entity></a-entity>
-    <a-entity light="type: directional; intensity: 0.8; castShadow: true" position="5 8 5"></a-entity><a-entity light="type: directional; intensity: 0.6" position="-5 8 5"></a-entity><a-entity light="type: ambient; intensity: 0.3; color: #9DB4C0"></a-entity>
-    <a-entity light="type: point; intensity: 1.2; distance: 12; color: #FFF8DC" position="0 5 0"></a-entity><a-entity light="type: point; intensity: 1.0; distance: 10; color: #FFF8DC" position="-6 5 -3"></a-entity><a-entity light="type: point; intensity: 1.0; distance: 10; color: #FFF8DC" position="6 5 -3"></a-entity><a-entity light="type: point; intensity: 1.0; distance: 10; color: #FFF8DC" position="-6 5 3"></a-entity><a-entity light="type: point; intensity: 1.0; distance: 10; color: #FFF8DC" position="6 5 3"></a-entity>
-    <a-plane rotation="-90 0 0" width="40" height="40" color="#34495E" material="metalness: 0.3; roughness: 0.8" shadow="receive: true"></a-plane>
-    <a-plane rotation="-90 0 0" width="40" height="0.15" position="0 0.01 -8" color="#F39C12"></a-plane><a-plane rotation="-90 0 0" width="40" height="0.15" position="0 0.01 8" color="#F39C12"></a-plane><a-plane rotation="-90 0 0" width="0.15" height="40" position="-10 0.01 0" color="#F39C12"></a-plane><a-plane rotation="-90 0 0" width="0.15" height="40" position="10 0.01 0" color="#F39C12"></a-plane>
-    <a-plane rotation="-90 0 0" width="0.1" height="40" position="0 0.02 0" color="#27AE60"></a-plane>
-    <a-box position="0 3 -15" width="40" height="6" depth="0.3" color="#3E5266" material="metalness: 0.4; roughness: 0.7"></a-box><a-box position="-15 3 0" width="0.3" height="6" depth="30" color="#3E5266" material="metalness: 0.4; roughness: 0.7"></a-box><a-box position="15 3 0" width="0.3" height="6" depth="30" color="#3E5266" material="metalness: 0.4; roughness: 0.7"></a-box>
-    <a-box position="-6 4 -14.9" width="2.5" height="1.8" depth="0.2" color="#5DADE2" material="opacity: 0.4; transparent: true; emissive: #5DADE2; emissiveIntensity: 0.3"></a-box><a-box position="0 4 -14.9" width="2.5" height="1.8" depth="0.2" color="#5DADE2" material="opacity: 0.4; transparent: true; emissive: #5DADE2; emissiveIntensity: 0.3"></a-box><a-box position="6 4 -14.9" width="2.5" height="1.8" depth="0.2" color="#5DADE2" material="opacity: 0.4; transparent: true; emissive: #5DADE2; emissiveIntensity: 0.3"></a-box>
-    <a-box position="-12 5.5 0" width="0.3" height="1" depth="30" color="#95A5A6"></a-box><a-box position="12 5.5 0" width="0.3" height="1" depth="30" color="#95A5A6"></a-box><a-box position="0 5.5 -12" width="30" height="1" depth="0.3" color="#95A5A6"></a-box><a-box position="0 5.5 12" width="30" height="1" depth="0.3" color="#95A5A6"></a-box>
-    <a-cylinder position="0 4.7 0" radius="0.6" height="0.2" color="#7F8C8D"></a-cylinder><a-cylinder position="0 5 0" radius="0.05" height="0.8" color="#34495E"></a-cylinder><a-circle position="0 4.6 0" radius="0.5" rotation="-90 0 0" color="#FFF8DC" material="emissive: #FFF8DC; emissiveIntensity: 0.8"></a-circle>
-    <a-cylinder position="-6 4.7 -3" radius="0.6" height="0.2" color="#7F8C8D"></a-cylinder><a-cylinder position="-6 5 -3" radius="0.05" height="0.8" color="#34495E"></a-cylinder><a-circle position="-6 4.6 -3" radius="0.5" rotation="-90 0 0" color="#FFF8DC" material="emissive: #FFF8DC; emissiveIntensity: 0.8"></a-circle>
-    <a-cylinder position="6 4.7 -3" radius="0.6" height="0.2" color="#7F8C8D"></a-cylinder><a-cylinder position="6 5 -3" radius="0.05" height="0.8" color="#34495E"></a-cylinder><a-circle position="6 4.6 -3" radius="0.5" rotation="-90 0 0" color="#FFF8DC" material="emissive: #FFF8DC; emissiveIntensity: 0.8"></a-circle>
-    <a-cylinder position="-6 4.7 3" radius="0.6" height="0.2" color="#7F8C8D"></a-cylinder><a-cylinder position="-6 5 3" radius="0.05" height="0.8" color="#34495E"></a-cylinder><a-circle position="-6 4.6 3" radius="0.5" rotation="-90 0 0" color="#FFF8DC" material="emissive: #FFF8DC; emissiveIntensity: 0.8"></a-circle>
-    <a-cylinder position="6 4.7 3" radius="0.6" height="0.2" color="#7F8C8D"></a-cylinder><a-cylinder position="6 5 3" radius="0.05" height="0.8" color="#34495E"></a-cylinder><a-circle position="6 4.6 3" radius="0.5" rotation="-90 0 0" color="#FFF8DC" material="emissive: #FFF8DC; emissiveIntensity: 0.8"></a-circle>
-    <a-box position="-3 0.1 0.8" width="2" height="0.05" depth="0.4" color="#2C3E50"></a-box><a-box position="3 0.1 0.8" width="2" height="0.05" depth="0.4" color="#2C3E50"></a-box>
-    <a-box position="-8 1 0" width="0.5" height="1.2" depth="0.1" color="#2C3E50" material="metalness: 0.6; roughness: 0.4"></a-box><a-box position="-8 1.3 0.06" width="0.35" height="0.25" depth="0.05" color="#27AE60"></a-box><a-circle position="-8.1 0.8 0.06" radius="0.05" color="#E74C3C"></a-circle><a-circle position="-7.95 0.8 0.06" radius="0.05" color="#2ECC71" material="emissive: #2ECC71; emissiveIntensity: 0.5"></a-circle>
-    <a-box position="-2 1 0" width="0.5" height="1.2" depth="0.1" color="#2C3E50" material="metalness: 0.6; roughness: 0.4"></a-box><a-box position="-2 1.3 0.06" width="0.35" height="0.25" depth="0.05" color="#27AE60"></a-box><a-circle position="-2.1 0.8 0.06" radius="0.05" color="#E74C3C"></a-circle><a-circle position="-1.95 0.8 0.06" radius="0.05" color="#2ECC71" material="emissive: #2ECC71; emissiveIntensity: 0.5"></a-circle>
-    <a-box position="4 1 0" width="0.5" height="1.2" depth="0.1" color="#2C3E50" material="metalness: 0.6; roughness: 0.4"></a-box><a-box position="4 1.3 0.06" width="0.35" height="0.25" depth="0.05" color="#27AE60"></a-box><a-circle position="3.9 0.8 0.06" radius="0.05" color="#E74C3C"></a-circle><a-circle position="4.05 0.8 0.06" radius="0.05" color="#2ECC71" material="emissive: #2ECC71; emissiveIntensity: 0.5"></a-circle>
-    <a-box position="-12 1.5 -8" width="4" height="3" depth="1.2" color="#566573" material="metalness: 0.3; roughness: 0.6"></a-box><a-box position="-12 0.8 -8" width="3.8" height="0.05" depth="1.1" color="#7F8C8D"></a-box><a-box position="-12 1.5 -8" width="3.8" height="0.05" depth="1.1" color="#7F8C8D"></a-box><a-box position="-12 2.2 -8" width="3.8" height="0.05" depth="1.1" color="#7F8C8D"></a-box>
-    <a-box position="-13 1 -8" width="0.4" height="0.4" depth="0.4" color="#E67E22"></a-box><a-box position="-12 1 -8" width="0.4" height="0.4" depth="0.4" color="#3498DB"></a-box><a-box position="-11 1 -8" width="0.4" height="0.4" depth="0.4" color="#9B59B6"></a-box><a-box position="-13 1.7 -8" width="0.4" height="0.4" depth="0.4" color="#1ABC9C"></a-box><a-box position="-12 1.7 -8" width="0.4" height="0.4" depth="0.4" color="#E74C3C"></a-box>
-    <a-box position="10 0.5 -10" width="1.5" height="1" depth="1" color="#7F8C8D" material="metalness: 0.5; roughness: 0.5"></a-box><a-box position="12 0.5 -10" width="1.5" height="1" depth="1" color="#95A5A6" material="metalness: 0.5; roughness: 0.5"></a-box><a-box position="10 0.5 -12" width="1.5" height="1" depth="1" color="#BDC3C7" material="metalness: 0.5; roughness: 0.5"></a-box>
-    <a-box position="-10 0.1 6" width="1.2" height="0.2" depth="1.2" color="#8B4513"></a-box><a-box position="-10 0.5 6" width="0.8" height="0.6" depth="0.8" color="#D35400"></a-box>
-    <a-box position="-12 0.1 6" width="1.2" height="0.2" depth="1.2" color="#8B4513"></a-box><a-box position="-12 0.5 6" width="0.8" height="0.6" depth="0.8" color="#16A085"></a-box>
-    <a-plane position="-14.9 2 -5" width="1.2" height="1.2" rotation="0 90 0" color="#F39C12"></a-plane><a-text value="!" position="-14.85 2 -5" rotation="0 90 0" align="center" color="#000" scale="3 3 3"></a-text>
-    <a-plane position="-14.9 2 5" width="1.2" height="1.2" rotation="0 90 0" color="#E74C3C"></a-plane><a-text value="STOP" position="-14.85 2 5" rotation="0 90 0" align="center" color="#FFF" scale="0.8 0.8 0.8"></a-text>
-    <a-cylinder position="-14.7 0.5 0" radius="0.12" height="1" color="#E74C3C"></a-cylinder><a-cylinder position="14.7 0.5 0" radius="0.12" height="1" color="#E74C3C"></a-cylinder><a-cylinder position="-14.7 0.5 -10" radius="0.12" height="1" color="#E74C3C"></a-cylinder><a-cylinder position="14.7 0.5 -10" radius="0.12" height="1" color="#E74C3C"></a-cylinder>
-    <a-cylinder position="-10 5.3 0" radius="0.1" height="30" rotation="0 0 90" color="#95A5A6"></a-cylinder><a-cylinder position="10 5.3 0" radius="0.1" height="30" rotation="0 0 90" color="#95A5A6"></a-cylinder>
-    <a-plane position="0 3 -14.9" width="3" height="1" color="#2C3E50"></a-plane><a-text value="LINEA DE ENSAMBLAJE\nESTACION 1-2-3" position="0 3 -14.8" align="center" color="#ECF0F1" scale="1.2 1.2 1.2"></a-text>
+    
+    <a-entity light="type: directional; intensity: 0.7; castShadow: true" position="5 10 5"></a-entity>
+    <a-entity light="type: directional; intensity: 0.5" position="-5 10 5"></a-entity>
+    <a-entity light="type: ambient; intensity: 0.2; color: #404040"></a-entity>
+    
+    <a-entity light="type: point; intensity: 1.5; distance: 15; color: #FFF8DC" position="0 4.7 0"></a-entity>
+    <a-entity light="type: point; intensity: 1.2; distance: 12; color: #FFF8DC" position="-6 4.7 -6"></a-entity>
+    <a-entity light="type: point; intensity: 1.2; distance: 12; color: #FFF8DC" position="6 4.7 -6"></a-entity>
+    
+    <a-plane rotation="-90 0 0" width="40" height="40" 
+             material="src: url(https://cdn.aframe.io/assets/images/uv_grid_opengl.jpg); repeat: 8 8; metalness: 0.7; roughness: 0.5; transparent: false;"
+             shadow="receive: true"></a-plane>
+    
+    <a-plane rotation="-90 0 0" width="40" height="0.1" position="0 0.01 -8" color="#C0C0C0" material="opacity: 0.4"></a-plane>
+    <a-plane rotation="-90 0 0" width="40" height="0.1" position="0 0.01 8" color="#C0C0C0" material="opacity: 0.4"></a-plane>
+    <a-plane rotation="-90 0 0" width="0.1" height="40" position="-10 0.01 0" color="#C0C0C0" material="opacity: 0.4"></a-plane>
+    <a-plane rotation="-90 0 0" width="0.1" height="40" position="10 0.01 0" color="#C0C0C0" material="opacity: 0.4"></a-plane>
+    
+    <a-box position="0 0.02 0" width="0.15" height="0.05" depth="40" color="#27AE60" material="emissive: #27AE60; emissiveIntensity: 0.2"></a-box>
+    
+    <a-box position="0 3 -15" width="40" height="6" depth="0.3" 
+           color="#2C3E50" material="metalness: 0.8; roughness: 0.2"></a-box>
+    <a-box position="-15 3 0" width="0.3" height="6" depth="30" 
+           color="#2C3E50" material="metalness: 0.8; roughness: 0.2"></a-box>
+    <a-box position="15 3 0" width="0.3" height="6" depth="30" 
+           color="#2C3E50" material="metalness: 0.8; roughness: 0.2"></a-box>
+    
+    <a-plane rotation="90 0 0" width="40" height="30" position="0 6 0" 
+             color="#2C3E50" material="metalness: 0.8; roughness: 0.2;"></a-plane>
+
+    <a-box position="-14.5 5.5 0" width="0.3" height="1" depth="30" color="#4A6178" material="metalness: 0.6; roughness: 0.4"></a-box>
+    <a-box position="14.5 5.5 0" width="0.3" height="1" depth="30" color="#4A6178" material="metalness: 0.6; roughness: 0.4"></a-box>
+    <a-box position="0 5.5 -14.5" width="30" height="1" depth="0.3" color="#4A6178" material="metalness: 0.6; roughness: 0.4"></a-box>
+    <a-box position="0 5.5 14.5" width="30" height="1" depth="0.3" color="#4A6178" material="metalness: 0.6; roughness: 0.4"></a-box>
+    
+    <a-cylinder position="0 4.7 0" radius="0.6" height="0.2" color="#7F8C8D"></a-cylinder>
+    <a-cylinder position="0 5 0" radius="0.05" height="0.8" color="#34495E"></a-cylinder>
+    <a-circle position="0 4.6 0" radius="0.5" rotation="-90 0 0" color="#FFF8DC" material="emissive: #FFF8DC; emissiveIntensity: 0.8"></a-circle>
+    
+    <a-cylinder position="-6 4.7 -6" radius="0.6" height="0.2" color="#7F8C8D"></a-cylinder>
+    <a-cylinder position="-6 5 -6" radius="0.05" height="0.8" color="#34495E"></a-cylinder>
+    <a-circle position="-6 4.6 -6" radius="0.5" rotation="-90 0 0" color="#FFF8DC" material="emissive: #FFF8DC; emissiveIntensity: 0.8"></a-circle>
+    
+    <a-cylinder position="6 4.7 -6" radius="0.6" height="0.2" color="#7F8C8D"></a-cylinder>
+    <a-cylinder position="6 5 -6" radius="0.05" height="0.8" color="#34495E"></a-cylinder>
+    <a-circle position="6 4.6 -6" radius="0.5" rotation="-90 0 0" color="#FFF8DC" material="emissive: #FFF8DC; emissiveIntensity: 0.8"></a-circle>
+
+    <a-box position="-3 0.1 0.8" width="2" height="0.05" depth="0.4" color="#4A6178" material="metalness: 0.7; roughness: 0.3"></a-box>
+    <a-box position="3 0.1 0.8" width="2" height="0.05" depth="0.4" color="#4A6178" material="metalness: 0.7; roughness: 0.3"></a-box>
+    
+    <a-box position="-8 1 0" width="0.5" height="1.2" depth="0.1" color="#2C3E50" material="metalness: 0.6; roughness: 0.4"></a-box>
+    <a-box position="-8 1.3 0.06" width="0.35" height="0.25" depth="0.05" color="#27AE60" material="emissive: #27AE60; emissiveIntensity: 0.3"></a-box>
+    <a-circle position="-8.1 0.8 0.06" radius="0.05" color="#E74C3C" material="emissive: #E74C3C; emissiveIntensity: 0.5"></a-circle>
+    <a-circle position="-7.95 0.8 0.06" radius="0.05" color="#2ECC71" material="emissive: #2ECC71; emissiveIntensity: 0.8"></a-circle>
+    
+    <a-box position="-2 1 0" width="0.5" height="1.2" depth="0.1" color="#2C3E50" material="metalness: 0.6; roughness: 0.4"></a-box>
+    <a-box position="-2 1.3 0.06" width="0.35" height="0.25" depth="0.05" color="#27AE60" material="emissive: #27AE60; emissiveIntensity: 0.3"></a-box>
+    <a-circle position="-2.1 0.8 0.06" radius="0.05" color="#E74C3C" material="emissive: #E74C3C; emissiveIntensity: 0.5"></a-circle>
+    <a-circle position="-1.95 0.8 0.06" radius="0.05" color="#2ECC71" material="emissive: #2ECC71; emissiveIntensity: 0.8"></a-circle>
+    
+    <a-box position="4 1 0" width="0.5" height="1.2" depth="0.1" color="#2C3E50" material="metalness: 0.6; roughness: 0.4"></a-box>
+    <a-box position="4 1.3 0.06" width="0.35" height="0.25" depth="0.05" color="#27AE60" material="emissive: #27AE60; emissiveIntensity: 0.3"></a-box>
+    <a-circle position="3.9 0.8 0.06" radius="0.05" color="#E74C3C" material="emissive: #E74C3C; emissiveIntensity: 0.5"></a-circle>
+    <a-circle position="4.05 0.8 0.06" radius="0.05" color="#2ECC71" material="emissive: #2ECC71; emissiveIntensity: 0.8"></a-circle>
+    
+    <a-box position="-12 1.5 -8" width="4" height="3" depth="1.2" color="#566573" material="metalness: 0.3; roughness: 0.6"></a-box>
+    <a-box position="-12 0.8 -8" width="3.8" height="0.05" depth="1.1" color="#7F8C8D"></a-box>
+    <a-box position="-12 1.5 -8" width="3.8" height="0.05" depth="1.1" color="#7F8C8D"></a-box>
+    <a-box position="-12 2.2 -8" width="3.8" height="0.05" depth="1.1" color="#7F8C8D"></a-box>
+    
+    <a-box position="-13 1 -8" width="0.4" height="0.4" depth="0.4" color="#E67E22"></a-box>
+    <a-box position="-12 1 -8" width="0.4" height="0.4" depth="0.4" color="#3498DB"></a-box>
+    <a-box position="-11 1 -8" width="0.4" height="0.4" depth="0.4" color="#9B59B6"></a-box>
+    <a-box position="-13 1.7 -8" width="0.4" height="0.4" depth="0.4" color="#1ABC9C"></a-box>
+    <a-box position="-12 1.7 -8" width="0.4" height="0.4" depth="0.4" color="#E74C3C"></a-box>
+    
+    <a-box position="10 0.5 -10" width="1.5" height="1" depth="1" color="#7F8C8D" material="metalness: 0.5; roughness: 0.5"></a-box>
+    <a-box position="12 0.5 -10" width="1.5" height="1" depth="1" color="#95A5A6" material="metalness: 0.5; roughness: 0.5"></a-box>
+    <a-box position="10 0.5 -12" width="1.5" height="1" depth="1" color="#BDC3C7" material="metalness: 0.5; roughness: 0.5"></a-box>
+    
+    <a-box position="-10 0.1 6" width="1.2" height="0.2" depth="1.2" color="#8B4513"></a-box>
+    <a-box position="-10 0.5 6" width="0.8" height="0.6" depth="0.8" color="#D35400"></a-box>
+    
+    <a-box position="-12 0.1 6" width="1.2" height="0.2" depth="1.2" color="#8B4513"></a-box>
+    <a-box position="-12 0.5 6" width="0.8" height="0.6" depth="0.8" color="#16A085"></a-box>
+    
+    <a-plane position="-14.9 2 -5" width="1.2" height="1.2" rotation="0 90 0" color="#F39C12"></a-plane>
+    <a-text value="!" position="-14.85 2 -5" rotation="0 90 0" align="center" color="#000" scale="3 3 3"></a-text>
+    
+    <a-plane position="-14.9 2 5" width="1.2" height="1.2" rotation="0 90 0" color="#E74C3C"></a-plane>
+    <a-text value="STOP" position="-14.85 2 5" rotation="0 90 0" align="center" color="#FFF" scale="0.8 0.8 0.8"></a-text>
+    
+    <a-cylinder position="-14.7 0.5 0" radius="0.12" height="1" color="#E74C3C"></a-cylinder>
+    <a-cylinder position="14.7 0.5 0" radius="0.12" height="1" color="#E74C3C"></a-cylinder>
+    <a-cylinder position="-14.7 0.5 -10" radius="0.12" height="1" color="#E74C3C"></a-cylinder>
+    <a-cylinder position="14.7 0.5 -10" radius="0.12" height="1" color="#E74C3C"></a-cylinder>
+    
+    <a-cylinder position="-10 5.8 0" radius="0.15" height="30" rotation="0 0 90" color="#7F8C8D" material="metalness: 0.6; roughness: 0.3"></a-cylinder>
+    <a-cylinder position="10 5.8 0" radius="0.15" height="30" rotation="0 0 90" color="#7F8C8D" material="metalness: 0.6; roughness: 0.3"></a-cylinder>
+    <a-box position="0 5.8 -5" width="0.3" height="0.3" depth="10" color="#7F8C8D" material="metalness: 0.6; roughness: 0.3"></a-box>
+    <a-box position="0 5.8 5" width="0.3" height="0.3" depth="10" color="#7F8C8D" material="metalness: 0.6; roughness: 0.3"></a-box>
+    
+    <a-cylinder position="-14.7 3 5" radius="0.08" height="2" rotation="90 0 0" color="#7F8C8D"></a-cylinder>
+    <a-cylinder position="-14.7 3 -5" radius="0.08" height="2" rotation="90 0 0" color="#7F8C8D"></a-cylinder>
+    <a-box position="-14.7 2.5 0" width="0.1" height="0.8" depth="10" color="#566573"></a-box>
+
+    <a-plane position="0 3 -14.9" width="3" height="1" color="#2C3E50" material="metalness: 0.5; roughness: 0.5"></a-plane>
+    <a-text value="LINEA DE ENSAMBLAJE\nESTACION 1-2-3" position="0 3 -14.8" align="center" color="#ECF0F1" scale="1.2 1.2 1.2"></a-text>
+
+    <a-box position="-14.9 4.5 -10" width="0.05" height="1" depth="1" color="#4A6178" material="metalness: 0.7; roughness: 0.3"></a-box>
+    <a-box position="-14.9 4.5 -10.2" width="0.05" height="1" depth="0.05" color="#303F50" rotation="0 90 0"></a-box>
+    <a-box position="-14.9 4.5 -10" width="0.05" height="1" depth="0.05" color="#303F50" rotation="0 -90 0"></a-box>
+
+    <a-cylinder position="8 0.5 8" radius="0.4" height="1" color="#607D8B"></a-cylinder>
+    <a-box position="8 1 8" width="0.8" height="0.1" depth="0.8" color="#455A64"></a-box>
+
+    <a-sphere position="-14.7 4 10" radius="0.1" color="#E74C3C" material="emissive: #E74C3C; emissiveIntensity: 1.0" blinking-light="color: #FF0000; interval: 700"></a-sphere>
+    <a-sphere position="14.7 4 10" radius="0.1" color="#E74C3C" material="emissive: #E74C3C; emissiveIntensity: 1.0" blinking-light="color: #FF0000; interval: 700"></a-sphere>
 
     <a-box position="-6 0.25 0.8" width="1.0" height="0.3" depth="0.6" color="#555555" material="metalness: 0.5; roughness: 0.3"></a-box>
     <a-cylinder position="-6.4 0.05 0.5" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="-5.6 0.05 0.5" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="-6.4 0.05 1.1" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="-5.6 0.05 1.1" radius="0.03" height="0.3" color="#444"></a-cylinder>
