@@ -1,130 +1,24 @@
-<html>
-<head>
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.3/tween.umd.js"></script>
-</head>
-<body>
-  <a-scene background="color: #ECECEC">
+<script>
+  // Este es un componente de diagnóstico para inspeccionar los nombres del modelo
+  AFRAME.registerComponent('robot-inspector', {
+    init: function () {
+      // Esperamos a que el modelo se cargue
+      this.el.addEventListener('model-loaded', () => {
+        const model = this.el.object3D;
 
-    <a-entity position="0 2 6" camera look-controls></a-entity>
+        console.log("--- LISTA DE NOMBRES DE PARTES DEL ROBOT ---");
 
-    <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
-    <a-entity light="type: ambient; intensity: 0.5"></a-entity>
-
-    <a-plane rotation="-90 0 0" width="12" height="12" color="#AAA"></a-plane>
-
-    <a-entity id="robot" 
-              gltf-model="GP12_AR1440.glb" 
-              scale="0.5 0.5 0.5"
-              position="0 0 0"
-              rotation="0 0 0"
-              industrial-process> </a-entity>
-
-  </a-scene>
-
-  <script>
-    AFRAME.registerComponent('industrial-process', {
-      init: function () {
-        const robotEntity = this.el;
-        
-        robotEntity.addEventListener('model-loaded', () => {
-          const model = robotEntity.object3D;
-
-          // === SECCIÓN ACTUALIZADA ===
-          // Usamos los nombres correctos que nos proporcionaste.
-          const jointS = model.getObjectByName('GP12_S_AXIS_GP12_AR1440.STEP-1');
-          const jointL = model.getObjectByName('GP12_L_AXIS_GP12_AR1440_Standard.STEP-1');
-          const jointU = model.getObjectByName('GP12_U_AXIS_GP12_AR1440_Standard.STEP-1');
-          const jointR = model.getObjectByName('GP12_R_AXIS_GP12_AR1440_Standard.STEP-1');
-          const jointB = model.getObjectByName('GP12_B_AXIS_GP12_AR1440_Standard.STEP-1');
-          
-          // Verificamos que todas las partes se hayan encontrado
-          if (jointS && jointL && jointU && jointR && jointB) {
-            console.log("¡Todas las articulaciones del robot encontradas! Iniciando animación.");
-            this.startProcess(jointS, jointL, jointU, jointR, jointB);
-          } else {
-            console.error("¡No se encontraron todas las articulaciones! Revisa que los nombres en el script coincidan exactamente con los del modelo.");
-            console.log("Estructura del modelo disponible:", model);
+        // Recorremos cada pieza del modelo 3D
+        model.traverse(function (object) {
+          // Si la pieza tiene un nombre, lo imprimimos en la consola
+          if (object.name) {
+            console.log(object.name);
           }
         });
-      },
 
-      startProcess: function (jointS, jointL, jointU, jointR, jointB) {
-        const duration = 1500;
-        const easing = TWEEN.Easing.Quadratic.InOut;
-        const toRad = (degrees) => degrees * (Math.PI / 180);
-
-        // --- Definimos los estados (posiciones) del robot ---
-        
-        // Estado Inicial / Home
-        const goHome = {
-            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(0) }, duration).easing(easing),
-            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(0) }, duration).easing(easing),
-            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(0) }, duration).easing(easing),
-            r: new TWEEN.Tween(jointR.rotation).to({ y: toRad(0) }, duration).easing(easing),
-            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(0) }, duration).easing(easing),
-        };
-
-        // Estado 1: Mover hacia la posición de recogida
-        const goToPick = {
-            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(90) }, duration).easing(easing),
-            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(45) }, duration).easing(easing),
-            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(60) }, duration).easing(easing),
-            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(90) }, duration).easing(easing), // La muñeca se inclina hacia abajo
-        };
-        
-        // Estado 2: Mover hacia la posición de colocación
-        const goToPlace = {
-            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(-90) }, duration * 2).easing(easing), // Se mueve más lento al otro lado
-            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(30) }, duration * 2).easing(easing),
-            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(75) }, duration * 2).easing(easing),
-            r: new TWEEN.Tween(jointR.rotation).to({ y: toRad(180) }, duration).easing(easing), // La muñeca gira
-            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(90) }, duration).easing(easing),
-        };
-
-        // --- Encadenamos la secuencia de movimientos ---
-        
-        // Al terminar de ir a "Recoger", vuelve a la posición "Home"
-        goToPick.s.chain(goHome.s);
-        goToPick.l.chain(goHome.l);
-        goToPick.u.chain(goHome.u);
-        goToPick.b.chain(goHome.b);
-
-        // Al terminar de volver a "Home", va a la posición "Colocar"
-        goHome.s.chain(goToPlace.s, goToPlace.r);
-        goHome.l.chain(goToPlace.l);
-        goHome.u.chain(goToPlace.u);
-        goHome.b.chain(goToPlace.b);
-
-        // Al terminar de ir a "Colocar", vuelve a "Home" para reiniciar el ciclo
-        goToPlace.s.onComplete(() => {
-            // Un pequeño retraso antes de volver a empezar para que no sea tan brusco
-            setTimeout(() => {
-                goHome.s.start(); goHome.l.start(); goHome.u.start(); goHome.r.start(); goHome.b.start();
-            }, 500);
-        });
-
-        goHome.r.onComplete(() => {
-             // Al terminar el ciclo completo, empieza de nuevo desde "Recoger"
-             setTimeout(() => {
-                goToPick.s.start(); goToPick.l.start(); goToPick.u.start(); goToPick.b.start();
-             }, 500);
-        });
-        
-        // --- Iniciamos la primera animación del ciclo ---
-        goToPick.s.start();
-        goToPick.l.start();
-        goToPick.u.start();
-        goToPick.b.start();
-      }
-    });
-
-    // Bucle de animación para que Tween.js funcione
-    function animate() {
-      requestAnimationFrame(animate);
-      TWEEN.update();
+        console.log("--- FIN DE LA LISTA ---");
+        console.warn("Usa los nombres de esta lista en el script de animación final. Cópialos y pégalos para evitar errores.");
+      });
     }
-    animate();
-  </script>
-</body>
-</html>
+  });
+</script>
