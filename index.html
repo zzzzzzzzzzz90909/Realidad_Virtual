@@ -34,11 +34,10 @@
       }
     });
 
-    // Nuevo componente para una luz intermitente (beacon light)
     AFRAME.registerComponent('blinking-light', {
       schema: {
         color: {type: 'color', default: '#FF0000'},
-        interval: {type: 'number', default: 500} // milliseconds
+        interval: {type: 'number', default: 500}
       },
       init: function() {
         this.material = this.el.getObject3D('mesh').material;
@@ -166,8 +165,12 @@
     <a-cylinder position="-14.7 3 -5" radius="0.08" height="2" rotation="90 0 0" color="#7F8C8D"></a-cylinder>
     <a-box position="-14.7 2.5 0" width="0.1" height="0.8" depth="10" color="#566573"></a-box>
 
-    <a-plane position="0 3 -14.9" width="3" height="1" color="#2C3E50" material="metalness: 0.5; roughness: 0.5"></a-plane>
-    <a-text value="LINEA DE ENSAMBLAJE\nESTACION 1-2-3" position="0 3 -14.8" align="center" color="#ECF0F1" scale="1.2 1.2 1.2"></a-text>
+    <a-plane position="0 4.5 -14.9" width="6" height="1.2" color="#2C3E50" material="metalness: 0.5; roughness: 0.5"></a-plane>
+    <a-text value="Andres Castillo\nCesar Chacon\nJulian Carvajal" 
+            position="0 4.5 -14.8" 
+            align="center" 
+            color="#ECF0F1" 
+            scale="1.2 1.2 1.2"></a-text>
 
     <a-box position="-14.9 4.5 -10" width="0.05" height="1" depth="1" color="#4A6178" material="metalness: 0.7; roughness: 0.3"></a-box>
     <a-box position="-14.9 4.5 -10.2" width="0.05" height="1" depth="0.05" color="#303F50" rotation="0 90 0"></a-box>
