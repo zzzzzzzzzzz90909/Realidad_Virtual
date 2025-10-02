@@ -3,8 +3,7 @@
 <head>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script>
-    // === 1. REEMPLAZAMOS EL SCRIPT ANTIGUO POR EL NUEVO 'track-target' ===
-    // Este componente hace que una entidad siga a otra.
+    // Componente 'track-target' para que el robot siga a la caja
     AFRAME.registerComponent('track-target', {
       schema: {
         target: {type: 'selector'},
@@ -85,11 +84,6 @@
            animation="property: position; to: -5.5 0.6 0.8; from: -6.5 0.6 0.8;
                       dir: alternate; loop: true; dur: 4000; easing: linear">
     </a-box>
-    <a-box id="block1-2" position="-6.5 0.6 0.8" width="0.15" height="0.2" depth="0.15"
-           color="#FF6B6B" material="metalness: 0.3; transparent: true"
-           animation="property: position; to: -5.5 0.6 0.8; from: -6.5 0.6 0.8;
-                      dir: alternate; loop: true; dur: 4000; delay: 2000; easing: linear">
-    </a-box>
     
     <a-box position="0 0.25 0.8" width="1.0" height="0.3" depth="0.6" color="#555555" material="metalness: 0.5; roughness: 0.3"></a-box>
     <a-cylinder position="-0.4 0.05 0.5" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="0.4 0.05 0.5" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="-0.4 0.05 1.1" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="0.4 0.05 1.1" radius="0.03" height="0.3" color="#444"></a-cylinder>
@@ -107,11 +101,6 @@
            animation="property: position; to: 0.5 0.6 0.8; from: -0.5 0.6 0.8;
                       dir: alternate; loop: true; dur: 4000; easing: linear">
     </a-box>
-    <a-box id="block2-2" position="-0.5 0.6 0.8" width="0.15" height="0.2" depth="0.15"
-           color="#4ECDC4" material="metalness: 0.3; transparent: true"
-           animation="property: position; to: 0.5 0.6 0.8; from: -0.5 0.6 0.8;
-                      dir: alternate; loop: true; dur: 4000; delay: 2000; easing: linear">
-    </a-box>
     
     <a-box position="6 0.25 0.8" width="1.0" height="0.3" depth="0.6" color="#555555" material="metalness: 0.5; roughness: 0.3"></a-box>
     <a-cylinder position="5.6 0.05 0.5" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="6.4 0.05 0.5" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="5.6 0.05 1.1" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="6.4 0.05 1.1" radius="0.03" height="0.3" color="#444"></a-cylinder>
@@ -128,11 +117,6 @@
            color="#95E1D3" material="metalness: 0.3; transparent: true"
            animation="property: position; to: 6.5 0.6 0.8; from: 5.5 0.6 0.8;
                       dir: alternate; loop: true; dur: 4000; easing: linear">
-    </a-box>
-    <a-box id="block3-2" position="5.5 0.6 0.8" width="0.15" height="0.2" depth="0.15"
-           color="#95E1D3" material="metalness: 0.3; transparent: true"
-           animation="property: position; to: 6.5 0.6 0.8; from: 5.5 0.6 0.8;
-                      dir: alternate; loop: true; dur: 4000; delay: 2000; easing: linear">
     </a-box>
     
   </a-scene>
