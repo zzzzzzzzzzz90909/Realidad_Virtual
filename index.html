@@ -23,130 +23,108 @@
   </a-scene>
 
   <script>
-    // 1. Registramos un nuevo componente de A-Frame llamado 'industrial-process'
     AFRAME.registerComponent('industrial-process', {
       init: function () {
-        // 'this.el' se refiere a la entidad <a-entity id="robot">
         const robotEntity = this.el;
-        let jointS, jointL, jointU; // Variables para guardar las articulaciones
-
-        // 2. Esperamos a que el modelo 3D se haya cargado por completo
+        
         robotEntity.addEventListener('model-loaded', () => {
           const model = robotEntity.object3D;
 
-          // 3. ¡MUY IMPORTANTE! Busca los nombres de las articulaciones de tu modelo.
-          // Los nombres 'Joint_1_S', 'Joint_2_L', 'Joint_3_U' son suposiciones.
-          // Debes reemplazarlos por los nombres correctos de tu archivo .glb.
-          // (Mira la sección "Cómo Encontrar los Nombres de las Articulaciones" más abajo)
-          jointS = model.getObjectByName('Joint_1_S'); // Articulación base (giro horizontal)
-          jointL = model.getObjectByName('Joint_2_L'); // Articulación del "hombro" (movimiento vertical)
-          jointU = model.getObjectByName('Joint_3_U'); // Articulación del "codo"
-
-          // Si las articulaciones se encontraron, iniciamos la secuencia
-          if (jointS && jointL && jointU) {
-            this.startProcess(jointS, jointL, jointU);
+          // === SECCIÓN ACTUALIZADA ===
+          // Usamos los nombres correctos que nos proporcionaste.
+          const jointS = model.getObjectByName('GP12_S_AXIS_GP12_AR1440.STEP-1');
+          const jointL = model.getObjectByName('GP12_L_AXIS_GP12_AR1440_Standard.STEP-1');
+          const jointU = model.getObjectByName('GP12_U_AXIS_GP12_AR1440_Standard.STEP-1');
+          const jointR = model.getObjectByName('GP12_R_AXIS_GP12_AR1440_Standard.STEP-1');
+          const jointB = model.getObjectByName('GP12_B_AXIS_GP12_AR1440_Standard.STEP-1');
+          
+          // Verificamos que todas las partes se hayan encontrado
+          if (jointS && jointL && jointU && jointR && jointB) {
+            console.log("¡Todas las articulaciones del robot encontradas! Iniciando animación.");
+            this.startProcess(jointS, jointL, jointU, jointR, jointB);
           } else {
-            console.error("¡No se encontraron las articulaciones! Revisa los nombres en tu modelo 3D.");
+            console.error("¡No se encontraron todas las articulaciones! Revisa que los nombres en el script coincidan exactamente con los del modelo.");
             console.log("Estructura del modelo disponible:", model);
           }
         });
       },
 
-      startProcess: function (jointS, jointL, jointU) {
-        // 4. Creamos una secuencia de animaciones usando Tween.js
-        const duration = 1500; // Duración de cada movimiento en milisegundos
-        const easing = TWEEN.Easing.Quadratic.InOut; // Tipo de aceleración/desaceleración
-
-        // Función para convertir grados a radianes (usado por el motor 3D)
+      startProcess: function (jointS, jointL, jointU, jointR, jointB) {
+        const duration = 1500;
+        const easing = TWEEN.Easing.Quadratic.InOut;
         const toRad = (degrees) => degrees * (Math.PI / 180);
 
-        // --- Definición de los Pasos de la Animación ---
+        // --- Definimos los estados (posiciones) del robot ---
         
-        // Paso 1: Mover a la posición de recogida
-        const pickPosition = new TWEEN.Tween(jointS.rotation)
-          .to({ y: toRad(90) }, duration) // Gira la base 90 grados
-          .easing(easing);
+        // Estado Inicial / Home
+        const goHome = {
+            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(0) }, duration).easing(easing),
+            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(0) }, duration).easing(easing),
+            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(0) }, duration).easing(easing),
+            r: new TWEEN.Tween(jointR.rotation).to({ y: toRad(0) }, duration).easing(easing),
+            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(0) }, duration).easing(easing),
+        };
+
+        // Estado 1: Mover hacia la posición de recogida
+        const goToPick = {
+            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(90) }, duration).easing(easing),
+            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(45) }, duration).easing(easing),
+            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(60) }, duration).easing(easing),
+            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(90) }, duration).easing(easing), // La muñeca se inclina hacia abajo
+        };
         
-        const armDown = new TWEEN.Tween(jointL.rotation)
-          .to({ z: toRad(45) }, duration) // Baja el hombro
-          .easing(easing);
+        // Estado 2: Mover hacia la posición de colocación
+        const goToPlace = {
+            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(-90) }, duration * 2).easing(easing), // Se mueve más lento al otro lado
+            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(30) }, duration * 2).easing(easing),
+            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(75) }, duration * 2).easing(easing),
+            r: new TWEEN.Tween(jointR.rotation).to({ y: toRad(180) }, duration).easing(easing), // La muñeca gira
+            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(90) }, duration).easing(easing),
+        };
+
+        // --- Encadenamos la secuencia de movimientos ---
         
-        const elbowDown = new TWEEN.Tween(jointU.rotation)
-          .to({ z: toRad(60) }, duration) // Dobla el codo
-          .easing(easing);
+        // Al terminar de ir a "Recoger", vuelve a la posición "Home"
+        goToPick.s.chain(goHome.s);
+        goToPick.l.chain(goHome.l);
+        goToPick.u.chain(goHome.u);
+        goToPick.b.chain(goHome.b);
 
-        // Paso 2: Volver a subir el brazo
-        const armUp = new TWEEN.Tween(jointL.rotation)
-          .to({ z: toRad(0) }, duration)
-          .easing(easing);
-        
-        const elbowUp = new TWEEN.Tween(jointU.rotation)
-          .to({ z: toRad(0) }, duration)
-          .easing(easing);
+        // Al terminar de volver a "Home", va a la posición "Colocar"
+        goHome.s.chain(goToPlace.s, goToPlace.r);
+        goHome.l.chain(goToPlace.l);
+        goHome.u.chain(goToPlace.u);
+        goHome.b.chain(goToPlace.b);
 
-        // Paso 3: Mover a la posición de colocación
-        const placePosition = new TWEEN.Tween(jointS.rotation)
-          .to({ y: toRad(-90) }, duration * 2) // Gira la base al otro lado
-          .easing(easing);
-
-        // Paso 4: Dejar el objeto (mismo movimiento que para recoger)
-        const armDownAgain = new TWEEN.Tween(jointL.rotation)
-          .to({ z: toRad(45) }, duration)
-          .easing(easing);
-
-        const elbowDownAgain = new TWEEN.Tween(jointU.rotation)
-          .to({ z: toRad(60) }, duration)
-          .easing(easing);
-
-        // Paso 5: Volver a la posición inicial para repetir el ciclo
-        const returnToStartBase = new TWEEN.Tween(jointS.rotation)
-          .to({ y: toRad(0) }, duration)
-          .easing(easing);
-
-        const returnToStartArm = new TWEEN.Tween(jointL.rotation)
-          .to({ z: toRad(0) }, duration)
-          .easing(easing);
-
-        const returnToStartElbow = new TWEEN.Tween(jointU.rotation)
-          .to({ z: toRad(0) }, duration)
-          .easing(easing);
-        
-        // 5. Encadenamos las animaciones para crear la secuencia
-        pickPosition.chain(armUp);
-        armDown.chain(armUp);
-        elbowDown.chain(elbowUp);
-
-        armUp.chain(placePosition);
-        elbowUp.chain(placePosition);
-
-        placePosition.chain(armDownAgain);
-        armDownAgain.chain(returnToStartArm);
-        elbowDownAgain.chain(returnToStartElbow);
-
-        returnToStartArm.chain(returnToStartBase);
-        returnToStartElbow.chain(returnToStartBase);
-        
-        // Cuando vuelve al inicio, se reinicia el ciclo completo
-        returnToStartBase.onComplete(() => {
-          pickPosition.start();
-          armDown.start();
-          elbowDown.start();
+        // Al terminar de ir a "Colocar", vuelve a "Home" para reiniciar el ciclo
+        goToPlace.s.onComplete(() => {
+            // Un pequeño retraso antes de volver a empezar para que no sea tan brusco
+            setTimeout(() => {
+                goHome.s.start(); goHome.l.start(); goHome.u.start(); goHome.r.start(); goHome.b.start();
+            }, 500);
         });
 
-        // ¡Iniciamos la primera animación!
-        pickPosition.start();
-        armDown.start();
-        elbowDown.start();
+        goHome.r.onComplete(() => {
+             // Al terminar el ciclo completo, empieza de nuevo desde "Recoger"
+             setTimeout(() => {
+                goToPick.s.start(); goToPick.l.start(); goToPick.u.start(); goToPick.b.start();
+             }, 500);
+        });
+        
+        // --- Iniciamos la primera animación del ciclo ---
+        goToPick.s.start();
+        goToPick.l.start();
+        goToPick.u.start();
+        goToPick.b.start();
       }
     });
 
-    // 6. Bucle de animación para que Tween.js funcione
+    // Bucle de animación para que Tween.js funcione
     function animate() {
       requestAnimationFrame(animate);
       TWEEN.update();
     }
     animate();
-
   </script>
 </body>
 </html>
