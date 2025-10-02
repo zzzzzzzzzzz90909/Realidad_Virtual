@@ -1,124 +1,112 @@
+<!DOCTYPE html>
 <html>
 <head>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.3/tween.umd.js"></script>
+  <script>
+    // === COMPONENTE MODIFICADO ===
+    // Lo renombramos a 'track-target' para que sea más descriptivo.
+    AFRAME.registerComponent('track-target', {
+      schema: {
+        // Nuevo: El selector del objeto que queremos seguir (la caja)
+        target: {type: 'selector'},
+        // Los ángulos de rotación del robot
+        minAngle: {type: 'number', default: -45},
+        maxAngle: {type: 'number', default: 45},
+        // Nuevo: El rango de movimiento del objeto que seguimos
+        targetMinPos: {type: 'number', default: -0.5},
+        targetMaxPos: {type: 'number', default: 0.5},
+        // El eje de rotación del robot
+        axis: {type: 'string', default: 'y'}
+      },
+      
+      tick: function(time, timeDelta) {
+        const data = this.data;
+        // 1. Verificamos si el objetivo (la caja) existe.
+        if (!data.target) return;
+        
+        // 2. Obtenemos la posición actual de la caja en cada fotograma.
+        const targetPosition = data.target.getAttribute('position');
+        const currentTargetX = targetPosition.x;
+        
+        // 3. Mapeamos la posición de la caja a un ángulo de rotación para el robot.
+        // Calculamos el progreso del movimiento de la caja (un valor de 0.0 a 1.0)
+        const positionProgress = (currentTargetX - data.targetMinPos) / (data.targetMaxPos - data.targetMinPos);
+        
+        // Calculamos el ángulo correspondiente para el robot basado en ese progreso.
+        const angle = data.minAngle + (data.maxAngle - data.minAngle) * positionProgress;
+        
+        // 4. Aplicamos la rotación al robot.
+        const rotation = this.el.getAttribute('rotation');
+        if (data.axis === 'y') {
+          this.el.setAttribute('rotation', {x: rotation.x, y: angle, z: rotation.z});
+        } else if (data.axis === 'x') {
+          this.el.setAttribute('rotation', {x: angle, y: rotation.y, z: rotation.z});
+        } else if (data.axis === 'z') {
+          this.el.setAttribute('rotation', {x: rotation.x, y: rotation.y, z: angle});
+        }
+      }
+    });
+  </script>
 </head>
 <body>
-  <a-scene background="color: #ECECEC">
-
-    <a-entity position="0 2 6" camera look-controls></a-entity>
-
-    <a-entity light="type: directional; intensity: 1" position="3 5 7"></a-entity>
-    <a-entity light="type: ambient; intensity: 0.5"></a-entity>
-
-    <a-plane rotation="-90 0 0" width="12" height="12" color="#AAA"></a-plane>
-
+  <a-scene background="color: #2C3E50">
+    
+    <a-entity id="rig" position="0 0 6"><a-entity position="0 1.6 0" camera look-controls="pointerLockEnabled: true" wasd-controls="acceleration: 30"></a-entity></a-entity>
+    <a-entity light="type: directional; intensity: 0.8; castShadow: true" position="5 8 5"></a-entity><a-entity light="type: directional; intensity: 0.6" position="-5 8 5"></a-entity><a-entity light="type: ambient; intensity: 0.4; color: #9DB4C0"></a-entity>
+    <a-entity light="type: point; intensity: 0.6; distance: 10" position="0 6 0"></a-entity><a-entity light="type: point; intensity: 0.5; distance: 8" position="-4 6 -3"></a-entity><a-entity light="type: point; intensity: 0.5; distance: 8" position="4 6 -3"></a-entity>
+    <a-plane rotation="-90 0 0" width="30" height="30" color="#34495E" material="metalness: 0.3; roughness: 0.8" shadow="receive: true"></a-plane>
+    <a-plane rotation="-90 0 0" width="30" height="0.1" position="0 0.01 -5" color="#F39C12"></a-plane><a-plane rotation="-90 0 0" width="30" height="0.1" position="0 0.01 5" color="#F39C12"></a-plane><a-plane rotation="-90 0 0" width="0.1" height="30" position="-5 0.01 0" color="#F39C12"></a-plane><a-plane rotation="-90 0 0" width="0.1" height="30" position="5 0.01 0" color="#F39C12"></a-plane>
+    <a-box position="0 3 -10" width="30" height="6" depth="0.3" color="#3E5266" material="metalness: 0.4; roughness: 0.7"></a-box><a-box position="-10 3 0" width="0.3" height="6" depth="20" color="#3E5266" material="metalness: 0.4; roughness: 0.7"></a-box><a-box position="10 3 0" width="0.3" height="6" depth="20" color="#3E5266" material="metalness: 0.4; roughness: 0.7"></a-box>
+    <a-box position="-4 4 -9.9" width="2" height="1.5" depth="0.2" color="#5DADE2" material="opacity: 0.3; transparent: true"></a-box><a-box position="0 4 -9.9" width="2" height="1.5" depth="0.2" color="#5DADE2" material="opacity: 0.3; transparent: true"></a-box><a-box position="4 4 -9.9" width="2" height="1.5" depth="0.2" color="#5DADE2" material="opacity: 0.3; transparent: true"></a-box>
+    <a-box position="-8 5.5 0" width="0.3" height="1" depth="20" color="#95A5A6"></a-box><a-box position="8 5.5 0" width="0.3" height="1" depth="20" color="#95A5A6"></a-box><a-box position="0 5.5 -8" width="20" height="1" depth="0.3" color="#95A5A6"></a-box>
+    <a-cylinder position="0 5 0" radius="0.5" height="0.3" color="#7F8C8D"></a-cylinder><a-cylinder position="0 5.8 0" radius="0.05" height="1.5" color="#34495E"></a-cylinder>
+    <a-cylinder position="-4 5 -3" radius="0.5" height="0.3" color="#7F8C8D"></a-cylinder><a-cylinder position="-4 5.8 -3" radius="0.05" height="1.5" color="#34495E"></a-cylinder>
+    <a-cylinder position="4 5 -3" radius="0.5" height="0.3" color="#7F8C8D"></a-cylinder><a-cylinder position="4 5.8 -3" radius="0.05" height="1.5" color="#34495E"></a-cylinder>
+    <a-box position="0 0.25 0.8" width="1.0" height="0.3" depth="0.6" color="#555555" material="metalness: 0.5; roughness: 0.3"></a-box>
+    <a-cylinder position="-0.4 0.05 0.5" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="0.4 0.05 0.5" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="-0.4 0.05 1.1" radius="0.03" height="0.3" color="#444"></a-cylinder><a-cylinder position="0.4 0.05 1.1" radius="0.03" height="0.3" color="#444"></a-cylinder>
+    <a-box position="-2 1 0" width="0.5" height="1.2" depth="0.1" color="#2C3E50" material="metalness: 0.6; roughness: 0.4"></a-box><a-box position="-2 1.3 0.06" width="0.35" height="0.25" depth="0.05" color="#27AE60"></a-box><a-circle position="-2.1 0.8 0.06" radius="0.05" color="#E74C3C"></a-circle><a-circle position="-1.95 0.8 0.06" radius="0.05" color="#F39C12"></a-circle><a-circle position="-1.8 0.8 0.06" radius="0.05" color="#2ECC71"></a-circle>
+    <a-box position="-8 1.5 -5" width="3" height="3" depth="1" color="#566573" material="metalness: 0.3; roughness: 0.6"></a-box><a-box position="-8 0.8 -5" width="2.8" height="0.05" depth="0.9" color="#7F8C8D"></a-box><a-box position="-8 1.5 -5" width="2.8" height="0.05" depth="0.9" color="#7F8C8D"></a-box><a-box position="-8 2.2 -5" width="2.8" height="0.05" depth="0.9" color="#7F8C8D"></a-box>
+    <a-box position="-8.5 1 -5" width="0.3" height="0.3" depth="0.3" color="#E67E22"></a-box><a-box position="-8 1 -5" width="0.3" height="0.3" depth="0.3" color="#3498DB"></a-box><a-box position="-7.5 1 -5" width="0.3" height="0.3" depth="0.3" color="#9B59B6"></a-box>
+    <a-box position="6 0.4 -6" width="1.2" height="0.8" depth="0.8" color="#7F8C8D" material="metalness: 0.5; roughness: 0.5"></a-box><a-box position="7.5 0.4 -6" width="1.2" height="0.8" depth="0.8" color="#95A5A6" material="metalness: 0.5; roughness: 0.5"></a-box>
+    <a-plane position="-9.9 2 -3" width="1" height="1" rotation="0 90 0" color="#F39C12"></a-plane><a-text value="!" position="-9.85 2 -3" rotation="0 90 0" align="center" color="#000" scale="3 3 3"></a-text>
+    <a-cylinder position="-9.7 0.5 2" radius="0.1" height="0.8" color="#E74C3C"></a-cylinder><a-cylinder position="9.7 0.5 2" radius="0.1" height="0.8" color="#E74C3C"></a-cylinder>
+    
     <a-entity id="robot" 
               gltf-model="GP12_AR1440.glb" 
               scale="0.5 0.5 0.5"
-              position="0 0 0"
+              position="0 0 0.2"
               rotation="0 0 0"
-              industrial-process>
+              track-target="target: #moving-block-1; minAngle: -45; maxAngle: 45; targetMinPos: -0.5; targetMaxPos: 0.5; axis: y">
     </a-entity>
-
+    
+    <a-box id="moving-block-1"
+           position="-0.5 0.6 0.8"
+           width="0.15" height="0.2" depth="0.15"
+           color="#FF6B6B"
+           material="metalness: 0.3; transparent: true"
+           animation="property: position; 
+                      to: 0.5 0.6 0.8; 
+                      from: -0.5 0.6 0.8;
+                      dir: alternate; 
+                      loop: true; 
+                      dur: 4000; 
+                      easing: linear">
+    </a-box>
+    
+    <a-box id="moving-block-2"
+           position="-0.5 0.6 0.8"
+           width="0.15" height="0.2" depth="0.15"
+           color="#FF6B6B"
+           material="metalness: 0.3; transparent: true"
+           animation="property: position; 
+                      to: 0.5 0.6 0.8; 
+                      from: -0.5 0.6 0.8;
+                      dir: alternate; 
+                      loop: true; 
+                      dur: 4000; 
+                      delay: 2000; 
+                      easing: linear">
+    </a-box>
   </a-scene>
-
-  <script>
-    AFRAME.registerComponent('industrial-process', {
-      init: function () {
-        this.el.addEventListener('model-loaded', () => {
-          const model = this.el.object3D;
-
-          // --- FUNCIÓN INTELIGENTE PARA ENCONTRAR LAS PARTES ---
-          // Esta función buscará en una lista de nombres posibles para cada articulación.
-          const findJoint = (model, possibleNames) => {
-            for (const name of possibleNames) {
-              const object = model.getObjectByName(name);
-              if (object) {
-                console.log(`ÉXITO: Articulación encontrada con el nombre: "${name}"`);
-                return object;
-              }
-            }
-            return null; // No se encontró con ninguno de los nombres
-          };
-
-          // --- LISTAS DE NOMBRES POSIBLES ---
-          // Aquí ponemos los nombres que me diste y algunas variaciones comunes.
-          const jointS = findJoint(model, ['GP12_S_AXIS_GP12_AR1440.STEP-1', 'GP12_S_AXIS_GP12_AR1440']);
-          const jointL = findJoint(model, ['GP12_L_AXIS_GP12_AR1440_Standard.STEP-1', 'GP12_L_AXIS_GP12_AR1440_Standard']);
-          const jointU = findJoint(model, ['GP12_U_AXIS_GP12_AR1440_Standard.STEP-1', 'GP12_U_AXIS_GP12_AR1440_Standard']);
-          const jointR = findJoint(model, ['GP12_R_AXIS_GP12_AR1440_Standard.STEP-1', 'GP12_R_AXIS_GP12_AR1440_Standard']);
-          const jointB = findJoint(model, ['GP12_B_AXIS_GP12_AR1440_Standard.STEP-1', 'GP12_B_AXIS_GP12_AR1440_Standard']);
-
-          // Verificamos si TODAS las articulaciones fueron encontradas
-          if (jointS && jointL && jointU && jointR && jointB) {
-            console.log("¡Todas las articulaciones del robot encontradas! Iniciando animación.");
-            this.startProcess(jointS, jointL, jointU, jointR, jointB);
-          } else {
-            // Si falta alguna, la consola te dirá cuál.
-            if (!jointS) console.error("ERROR: No se pudo encontrar la articulación del EJE S.");
-            if (!jointL) console.error("ERROR: No se pudo encontrar la articulación del EJE L.");
-            if (!jointU) console.error("ERROR: No se pudo encontrar la articulación del EJE U.");
-            if (!jointR) console.error("ERROR: No se pudo encontrar la articulación del EJE R.");
-            if (!jointB) console.error("ERROR: No se pudo encontrar la articulación del EJE B.");
-          }
-        });
-      },
-
-      // --- CÓDIGO DE ANIMACIÓN (Este no ha cambiado) ---
-      startProcess: function (jointS, jointL, jointU, jointR, jointB) {
-        const duration = 1500;
-        const easing = TWEEN.Easing.Quadratic.InOut;
-        const toRad = (degrees) => degrees * (Math.PI / 180);
-
-        const goHome = {
-            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(0) }, duration).easing(easing),
-            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(0) }, duration).easing(easing),
-            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(0) }, duration).easing(easing),
-            r: new TWEEN.Tween(jointR.rotation).to({ y: toRad(0) }, duration).easing(easing),
-            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(0) }, duration).easing(easing),
-        };
-        const goToPick = {
-            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(90) }, duration).easing(easing),
-            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(45) }, duration).easing(easing),
-            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(60) }, duration).easing(easing),
-            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(90) }, duration).easing(easing),
-        };
-        const goToPlace = {
-            s: new TWEEN.Tween(jointS.rotation).to({ y: toRad(-90) }, duration * 2).easing(easing),
-            l: new TWEEN.Tween(jointL.rotation).to({ z: toRad(30) }, duration * 2).easing(easing),
-            u: new TWEEN.Tween(jointU.rotation).to({ z: toRad(75) }, duration * 2).easing(easing),
-            r: new TWEEN.Tween(jointR.rotation).to({ y: toRad(180) }, duration).easing(easing),
-            b: new TWEEN.Tween(jointB.rotation).to({ z: toRad(90) }, duration).easing(easing),
-        };
-
-        goToPick.s.chain(goHome.s);
-        goToPick.l.chain(goHome.l);
-        goToPick.u.chain(goHome.u);
-        goToPick.b.chain(goHome.b);
-        goHome.s.chain(goToPlace.s, goToPlace.r);
-        goHome.l.chain(goToPlace.l);
-        goHome.u.chain(goToPlace.u);
-        goHome.b.chain(goToPlace.b);
-        goToPlace.s.onComplete(() => {
-            setTimeout(() => { goHome.s.start(); goHome.l.start(); goHome.u.start(); goHome.r.start(); goHome.b.start(); }, 500);
-        });
-        goHome.r.onComplete(() => {
-             setTimeout(() => { goToPick.s.start(); goToPick.l.start(); goToPick.u.start(); goToPick.b.start(); }, 500);
-        });
-        
-        goToPick.s.start();
-        goToPick.l.start();
-        goToPick.u.start();
-        goToPick.b.start();
-      }
-    });
-
-    function animate() {
-      requestAnimationFrame(animate);
-      TWEEN.update();
-    }
-    animate();
-  </script>
 </body>
 </html>
